@@ -30,7 +30,6 @@ splash.update_text('importing standard library modules')
 import sys
 import time
 import threading
-import logging
 from queue import Queue
 import ast
 import pprint
