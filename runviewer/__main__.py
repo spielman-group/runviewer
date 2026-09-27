@@ -1765,7 +1765,7 @@ if __name__ == "__main__":
 
     port = int(exp_config.get('ports', 'runviewer'))
     # Start experiment server
-    experiment_server = RunviewerServer(port)
+    runviewer_server = RunviewerServer(port)
 
     app = RunViewer(exp_config)
     splash.hide()
