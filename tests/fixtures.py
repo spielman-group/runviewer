@@ -84,7 +84,7 @@ with warnings.catch_warnings():
     # Done once, here, so that no test module has to repeat it.
     warnings.simplefilter('ignore')
     import runviewer.__main__ as main_module  # noqa: E402
-    from runviewer.__main__ import RunViewer  # noqa: E402
+    from runviewer.__main__ import RunViewer, RunviewerServer  # noqa: E402
 
 # The module itself, for the tests that patch names in its namespace rather
 # than borrow a method from it. Exported for the same reason the classes are:
@@ -92,6 +92,7 @@ with warnings.catch_warnings():
 # constraint along with it.
 __all__ = [
     'RunViewer',
+    'RunviewerServer',
     'Splash',
     'main_module',
 ]

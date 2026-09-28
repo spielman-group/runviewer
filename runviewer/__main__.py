@@ -30,7 +30,6 @@ splash.update_text('importing standard library modules')
 import sys
 import time
 import threading
-import logging
 from queue import Queue
 import ast
 import pprint
@@ -1748,22 +1747,11 @@ class TempShot(Shot):
 
 
 class RunviewerServer(ZMQServer):
-    def __init__(self, *args, **kwargs):
-        ZMQServer.__init__(self, *args, **kwargs)
-        self.logger = logging.getLogger('runviewer.server')
-
-    def handler(self, h5_filepath):
-        if h5_filepath == 'hello':
-            return 'hello'
-
-        self.logger.info('Received hdf5 file: %s' % h5_filepath)
-        # Convert path to local slashes and shared drive prefix:
-        h5_filepath = labscript_utils.shared_drive.path_to_local(h5_filepath)
-        logger.info('local filepath: %s' % h5_filepath)
+    def handle_add_shot(self, filepath):
+        logger.info(f'Received shot file: {filepath}')
         # we add the shot to a queue so that we don't have to wait for the app to come up before
         # responding to runmanager
-        shots_to_process_queue.put(h5_filepath)
-        return 'ok'
+        shots_to_process_queue.put(labscript_utils.shared_drive.path_to_local(filepath))
 
 
 if __name__ == "__main__":
@@ -1777,7 +1765,7 @@ if __name__ == "__main__":
 
     port = int(exp_config.get('ports', 'runviewer'))
     # Start experiment server
-    experiment_server = RunviewerServer(port)
+    runviewer_server = RunviewerServer(port)
 
     app = RunViewer(exp_config)
     splash.hide()
