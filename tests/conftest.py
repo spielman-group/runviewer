@@ -19,8 +19,6 @@ window per failure. Exceptions are still logged and still reach stderr, so
 nothing is hidden from the person running the tests.
 
 Both use ``setdefault``, so a value already in the environment wins.
-``LABSCRIPT_NO_ERROR_DIALOG=0`` leaves the dialog on, as do ``false``, ``no``,
-``off``, an empty value and leaving it unset; anything else suppresses it.
 
 That is also why this is a conftest rather than a fixture. Both variables have
 to be set before the module that reads them is imported -- ``QT_QPA_PLATFORM``
