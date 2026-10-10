@@ -12,7 +12,9 @@
 #####################################################################
 import os
 
-from .__version__ import __version__
+from labscript_utils.versions import package_version
+
+__version__ = package_version(__package__)
 
 APPLICATION_NAME = 'runviewer'
 runviewer_dir = os.path.dirname(os.path.realpath(__file__))
