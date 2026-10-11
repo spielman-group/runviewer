@@ -21,15 +21,17 @@ they are pinned here because the extension a dialog offers and the extension its
 file ends up with are one contract, not two.
 
 The panel belongs to the operating system and cannot be driven from a test, so
-the seam under test is the call into it: ``QFileDialog`` is replaced in the
-application's namespace and the arguments it was given are read back. What the
-file is called is read from the directory afterwards, the name being the whole
-of what is under test.
+the seam under test is the call into it: ``QFileDialog`` is replaced in
+``file_dialogs``, which makes the call, and the arguments it was given are read
+back. What the file is called is read from the directory afterwards, the name
+being the whole of what is under test.
 """
 import os
 import shutil
 import tempfile
 import unittest
+
+import labscript_utils.qtwidgets.file_dialogs as file_dialogs
 
 # fixtures stubs the splash and does the guarded import of the application,
 # once, for every test module. Importing runviewer.__main__ here instead would
@@ -95,12 +97,11 @@ class FakeRunViewer(object):
 
 
 class FakeFileDialog(object):
-    """Stands in for ``QFileDialog`` in the application's namespace.
+    """Stands in for ``QFileDialog`` in ``file_dialogs``.
 
-    ``runviewer.__main__`` takes ``QFileDialog`` from a star import, so it is a
-    name in that module rather than an attribute of a package, and rebinding
-    the name is enough to intercept the call. Doing it this way leaves the real
-    Qt class untouched for everything else in the process.
+    The dialog helpers look ``QFileDialog`` up in their own module, so rebinding
+    the name there is enough to intercept the call. Doing it this way leaves the
+    real Qt class untouched for everything else in the process.
     """
 
     def __init__(self):
@@ -122,14 +123,14 @@ class SaveChannelConfigDialogTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.folder, ignore_errors=True)
 
         self.file_dialog = FakeFileDialog()
-        self.saved_file_dialog = main_module.QFileDialog
-        main_module.QFileDialog = self.file_dialog
+        self.saved_file_dialog = file_dialogs.QFileDialog
+        file_dialogs.QFileDialog = self.file_dialog
         self.addCleanup(self.restore)
 
         self.app = FakeRunViewer(self.folder)
 
     def restore(self):
-        main_module.QFileDialog = self.saved_file_dialog
+        file_dialogs.QFileDialog = self.saved_file_dialog
 
     def suggested_path(self):
         """The name the panel was offered, the dialog having been cancelled."""
@@ -183,14 +184,14 @@ class SaveChannelConfigExtensionTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.folder, ignore_errors=True)
 
         self.file_dialog = FakeFileDialog()
-        self.saved_file_dialog = main_module.QFileDialog
-        main_module.QFileDialog = self.file_dialog
+        self.saved_file_dialog = file_dialogs.QFileDialog
+        file_dialogs.QFileDialog = self.file_dialog
         self.addCleanup(self.restore)
 
         self.app = FakeRunViewer(self.folder)
 
     def restore(self):
-        main_module.QFileDialog = self.saved_file_dialog
+        file_dialogs.QFileDialog = self.saved_file_dialog
 
     def written(self, returned_name):
         """Save with the panel returning ``returned_name``, and list the folder."""

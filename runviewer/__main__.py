@@ -33,7 +33,6 @@ import threading
 from queue import Queue
 import ast
 import pprint
-import signal
 import concurrent.futures
 import traceback
 
@@ -66,7 +65,7 @@ from qtutils import *
 import qtutils.icons
 splash.update_text('importing labscript suite modules')
 from labscript_utils.connections import ConnectionTable
-from labscript_utils import device_registry
+from labscript_utils import device_registry, ensure_str
 
 from labscript_utils.labconfig import (
     LabConfig,
@@ -75,7 +74,9 @@ from labscript_utils.labconfig import (
     save_appconfig,
     load_appconfig,
 )
+from labscript_utils.qtwidgets.application import exec_qapplication
 from labscript_utils.ls_zprocess import ZMQServer, ProcessTree
+import labscript_utils.qtwidgets.file_dialogs as file_dialogs
 process_tree = ProcessTree.instance()
 process_tree.zlock_client.set_process_name(APPLICATION_NAME)
 
@@ -381,14 +382,6 @@ class RunViewer(LabscriptApplication):
             'splitter_2': self.ui.splitter_2.sizes(),
         }
 
-    def save_configuration(self, save_file):
-        """Save the current runviewer GUI state to a TOML config file."""
-        save_data = self.get_save_data()
-        save_file = save_appconfig(save_file, {'runviewer_state': save_data})
-        self.last_save_config_file = save_file
-        self.last_save_data = save_data
-        self.set_config_window_title(save_file)
-
     def load_configuration(self, filename):
         """Load runviewer GUI state from a TOML/legacy INI config file."""
         # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
@@ -408,28 +401,24 @@ class RunViewer(LabscriptApplication):
 
     def on_load_runviewer_state(self):
         # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
-        config_file = QFileDialog.getOpenFileName(
+        config_file = file_dialogs.open_file(
             self.ui,
             'Select file to load',
             self.last_save_config_file or self.get_default_config_file(),
             'Config files (*.toml *.ini)',
         )
-        if isinstance(config_file, tuple):
-            config_file, _ = config_file
         if config_file:
-            self.load_configuration(os.path.abspath(config_file))
+            self.load_configuration(config_file)
 
     def on_save_runviewer_state(self):
-        save_file = QFileDialog.getSaveFileName(
+        save_file = file_dialogs.save_file(
             self.ui,
             'Select file to save current runviewer state',
             self.last_save_config_file or self.get_default_config_file(),
             'Config files (*.toml)',
         )
-        if isinstance(save_file, tuple):
-            save_file, _ = save_file
         if save_file:
-            self.save_configuration(os.path.abspath(save_file))
+            self.save_configuration(save_file)
 
     def _update_markers(self, index):
         for line, plot in self.all_marker_items.items():
@@ -476,7 +465,7 @@ class RunViewer(LabscriptApplication):
                 # Default colour, black:
                 r, g, b = (0, 0, 0)
             color = QColor(r, g, b)
-            label = m['label'].decode() if isinstance( m['label'], bytes) else str(m['label'])
+            label = ensure_str(m['label'])
             if i == 0:
                 line = self._markers_plot[0].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=Qt.DashLine), label=label, labelOpts= {"color": color, "fill": QColor(255, 255, 255, 255), "rotateAxis":(1, 0), "anchors": [(0.5, 0),(0.5, 0)]}, movable=False )
             else:
@@ -672,14 +661,12 @@ class RunViewer(LabscriptApplication):
 
     def on_load_channel_config(self):
         # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
-        config_file = QFileDialog.getOpenFileName(
+        config_file = file_dialogs.open_file(
             self.ui,
             "Select file to load",
             self.default_config_path,
             "Config files (*.toml *.ini)",
         )
-        if isinstance(config_file, tuple):
-            config_file, _ = config_file
         if config_file:
             # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
             runviewer_config = load_appconfig(config_file).get('runviewer_state', {})
@@ -712,15 +699,12 @@ class RunViewer(LabscriptApplication):
         # stem is not the default configuration file's, which sits in this same
         # folder and holds the runviewer state rather than a channel list.
         suggested_file = os.path.join(self.default_config_path, 'untitled.toml')
-        save_file = QFileDialog.getSaveFileName(
+        save_file = file_dialogs.save_file(
             self.ui,
             'Select  file to save current channel configuration',
             suggested_file,
             "Config files (*.toml)",
         )
-        if type(save_file) is tuple:
-            save_file, _ = save_file
-
         if save_file:
             # The name that comes back need not be the name that was offered:
             # an operator can clear the extension, and a panel that resolved the
@@ -755,14 +739,16 @@ class RunViewer(LabscriptApplication):
                             line.hide()
 
     def on_add_shot(self):
-        selected_files = QFileDialog.getOpenFileNames(self.ui, "Select file to load", self.last_opened_shots_folder, "HDF5 files (*.h5 *.hdf5)")
+        selected_files = file_dialogs.open_files(
+            self.ui,
+            "Select file to load",
+            self.last_opened_shots_folder,
+            "HDF5 files (*.h5 *.hdf5)",
+        )
+        if not selected_files:
+            return
         popup_warning = False
-        if isinstance(selected_files, tuple):
-            selected_files, _ = selected_files
-        # Convert to standard platform specific path, otherwise Qt likes forward slashes:
-        selected_files = [os.path.abspath(str(shot_file)) for shot_file in selected_files]
-        if len(selected_files) > 0:
-            self.last_opened_shots_folder = os.path.dirname(selected_files[0])
+        self.last_opened_shots_folder = os.path.dirname(selected_files[0])
 
         for file in selected_files:
             try:
@@ -1570,11 +1556,9 @@ class Shot(object):
         # open h5 file
         with h5py.File(path, 'r') as file:
             # Get master pseudoclock
-            self.master_pseudoclock_name = file['connection table'].attrs['master_pseudoclock']
-            if isinstance(self.master_pseudoclock_name, bytes):
-                self.master_pseudoclock_name = self.master_pseudoclock_name.decode('utf8')
-            else:
-                self.master_pseudoclock_name = str(self.master_pseudoclock_name)
+            self.master_pseudoclock_name = ensure_str(
+                file['connection table'].attrs['master_pseudoclock']
+            )
 
             # get stop time
             self.stop_time = file['devices'][self.master_pseudoclock_name].attrs['stop_time']
@@ -1584,7 +1568,7 @@ class Shot(object):
             # Get Shutter Calibrations
             if 'calibrations' in file and 'Shutter' in file['calibrations']:
                 for name, open_delay, close_delay in numpy.array(file['calibrations']['Shutter']):
-                    name = name.decode('utf8') if isinstance(name, bytes) else str(name)
+                    name = ensure_str(name)
                     self._shutter_calibrations[name] = [open_delay, close_delay]
 
     def delete_cache(self):
@@ -1755,9 +1739,7 @@ class RunviewerServer(ZMQServer):
 
 
 if __name__ == "__main__":
-    qapplication = QApplication.instance()
-    if qapplication is None:
-        qapplication = QApplication(sys.argv)
+    qapplication = splash.qapplication
 
     shots_to_process_queue = Queue()
 
@@ -1770,14 +1752,4 @@ if __name__ == "__main__":
     app = RunViewer(exp_config)
     splash.hide()
 
-    def execute_program():
-        qapplication.exec()
-
-    # Let the interpreter run every 500ms so it sees Ctrl-C interrupts:
-    timer = QTimer()
-    timer.start(500)
-    timer.timeout.connect(lambda: None)
-    # Upon seeing a ctrl-c interrupt, quit the event loop
-    signal.signal(signal.SIGINT, lambda *args: qapplication.exit())
-
-    sys.exit(execute_program())
+    sys.exit(exec_qapplication(qapplication))
