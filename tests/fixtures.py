@@ -23,7 +23,7 @@ use in their own ``fixtures.py``.
 Borrowing from ``__main__`` at all is the last resort. A test reaches for a leaf
 module first, as lyse's tests do with ``lyse.widgets`` and BLACS's with
 ``blacs.front_panel_settings``, and failing that loads the module by path with
-its dependencies stubbed, as ``blacs/tests/test_plugins_compat.py`` does.
+its dependencies stubbed.
 Neither is open to a method of ``RunViewer``: there is no leaf module holding
 it, and loading ``__main__`` by path would mean stubbing every one of its
 imports to reach a single handler.
