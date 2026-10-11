@@ -33,7 +33,6 @@ and nothing here shows a widget.
 """
 import sys
 import types
-import warnings
 
 
 class Splash(object):
@@ -76,15 +75,8 @@ def _stub_splash_module():
 
 _stub_splash_module()
 
-with warnings.catch_warnings():
-    # labscript_utils.excepthook installs a warning logger that calls the
-    # deprecated logging.warn, which warns in turn, so any warning raised while
-    # it is installed recurses until the stack runs out. Importing the
-    # application installs it, so the import is done under a suppressed filter.
-    # Done once, here, so that no test module has to repeat it.
-    warnings.simplefilter('ignore')
-    import runviewer.__main__ as main_module  # noqa: E402
-    from runviewer.__main__ import RunViewer, RunviewerServer  # noqa: E402
+import runviewer.__main__ as main_module  # noqa: E402
+from runviewer.__main__ import RunViewer, RunviewerServer  # noqa: E402
 
 # The module itself, for the tests that patch names in its namespace rather
 # than borrow a method from it. Exported for the same reason the classes are:
