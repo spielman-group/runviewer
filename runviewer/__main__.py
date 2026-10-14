@@ -1145,14 +1145,6 @@ class RunViewer(LabscriptGuiApplication):
         #       visible) then there is a problem.
         #       Also need to explicitly handle cases where none of the data
         #       is visible (which resampling does by setting NaNs)
-        #
-        # x_data_slice = data_x[(data_x>=xmin)&(data_x<=xmax)]
-        # print len(data_x)
-        # if len(x_data_slice) < 3*2000+2:
-        #    x_out = x_data_slice
-        #    y_out = data_y[(data_x>=xmin)&(data_x<=xmax)][:-1]
-        #    logger.info('skipping resampling')
-        # else:
         _resample(data_x, data_y, x_out, y_out, numpy.float64(stop_time))
         return x_out, y_out
 
@@ -1178,13 +1170,17 @@ class RunViewer(LabscriptGuiApplication):
 
     @inmain_decorator(wait_for_return=True)
     def __get_all_resample_params(self):
-        return [(channel, shot, colour, *self._get_resample_params(channel, shot))
+        # The plot item is taken here, on the main thread, which removes it when a
+        # shot is unticked:
+        return [(channel, shot, colour, self.plot_items[channel][shot],
+                 *self._get_resample_params(channel, shot))
             for shot, (colour, shutters_checked) in self.get_selected_shots_and_colours().items()
                 for channel in shot.traces
                     if self.channel_checked_and_enabled(channel)
+                    and shot in self.plot_items.get(channel, {})
         ]
 
-    def __pool_resample(self, channel, shot, colour, xmin, xmax, dx):
+    def __pool_resample(self, channel, shot, colour, plot_item, xmin, xmax, dx):
         try:
             # We go a bit outside the visible range so that scrolling
             # doesn't immediately go off the edge of the data, and the
@@ -1194,7 +1190,7 @@ class RunViewer(LabscriptGuiApplication):
                 xnew, ynew = self.resample(shot.scaled_times(channel), shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
             else:
                 xnew, ynew = self.resample(shot.traces[channel][0], shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
-            return inmain_later(self.plot_items[channel][shot].setData, xnew, ynew, pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
+            return inmain_later(plot_item.setData, xnew, ynew, pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
         except Exception:
             logger.exception(f'Could not resample {channel}')
 

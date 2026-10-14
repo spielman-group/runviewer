@@ -236,7 +236,7 @@ QToolButton:hover:checked {
          <property name="spacing">
           <number>3</number>
          </property>
-         <item row="1" column="1">
+         <item row="0" column="1">
           <widget class="TreeView" name="channel_treeview">
            <property name="editTriggers">
             <set>QAbstractItemView::NoEditTriggers</set>
@@ -249,7 +249,7 @@ QToolButton:hover:checked {
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
+         <item row="0" column="0">
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
             <spacer name="verticalSpacer_2">
