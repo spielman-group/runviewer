@@ -301,8 +301,6 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.remove_shots.setIcon(QIcon(':/qtutils/fugue/minus'))
         self.ui.enable_selected_shots.setIcon(QIcon(':/qtutils/fugue/ui-check-box'))
         self.ui.disable_selected_shots.setIcon(QIcon(':/qtutils/fugue/ui-check-box-uncheck'))
-        self.ui.group_channel.setIcon(QIcon(':/qtutils/fugue/layers-group'))
-        self.ui.delete_group.setIcon(QIcon(':/qtutils/fugue/layers-ungroup'))
         self.ui.channel_move_to_top.setIcon(QIcon(':/qtutils/fugue/arrow-stop-090'))
         self.ui.channel_move_up.setIcon(QIcon(':/qtutils/fugue/arrow-090'))
         self.ui.channel_move_down.setIcon(QIcon(':/qtutils/fugue/arrow-270'))
@@ -320,10 +318,6 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.actionQuit.setIcon(QIcon(':/qtutils/fugue/cross-button'))
         self.ui.actionLoad_channel_config.setIcon(QIcon(':/qtutils/fugue/folder-open'))
         self.ui.actionSave_channel_config.setIcon(QIcon(':/qtutils/fugue/disk'))
-
-        # disable buttons that are not yet implemented to help avoid confusion!
-        self.ui.group_channel.setEnabled(False)
-        self.ui.delete_group.setEnabled(False)
 
         # connect signals
         self.ui.reset_x_axis.clicked.connect(self.on_x_axis_reset)
@@ -792,7 +786,6 @@ class RunViewer(LabscriptGuiApplication):
 
         for row in selected_row_list:
             item = self.shot_model.item(row, SHOT_MODEL__CHECKBOX_INDEX)
-            colour_item = self.shot_model.item(row, SHOT_MODEL__COLOUR_INDEX)
             shutter_item = self.shot_model.item(row, SHOT_MODEL__SHUTTER_INDEX)
             shot = item.data()
             # unselect shot
@@ -803,7 +796,6 @@ class RunViewer(LabscriptGuiApplication):
             self.ui.markers_comboBox.removeItem(shot_combobox_index)
             # remove row
             self.shot_model.removeRow(row)
-            del shot
 
     def on_shot_selection_changed(self, item):
         if self.shot_model.indexFromItem(item).column() == SHOT_MODEL__CHECKBOX_INDEX:
@@ -976,8 +968,6 @@ class RunViewer(LabscriptGuiApplication):
 
         self.channel_model.blockSignals(False)
         self.channel_model.layoutChanged.emit()
-
-        # TODO: Also update entries in groups
 
         self.update_plots()
 
@@ -1163,174 +1153,8 @@ class RunViewer(LabscriptGuiApplication):
         #    y_out = data_y[(data_x>=xmin)&(data_x<=xmax)][:-1]
         #    logger.info('skipping resampling')
         # else:
-        resampling = True
-
-        if resampling:
-            _resample(data_x, data_y, x_out, y_out, numpy.float64(stop_time))
-            # self.__resample4(data_x, data_y, x_out, y_out, numpy.float32(stop_time))
-        else:
-            x_out, y_out = data_x, data_y
-
+        _resample(data_x, data_y, x_out, y_out, numpy.float64(stop_time))
         return x_out, y_out
-
-    def __resample4(self, x_in, y_in, x_out, y_out, stop_time):
-        # we want x-out to have three times the number of points as there are pixels
-        # Plus one at the end
-        # y_out = numpy.empty(len(x_out)-1, dtype=numpy.float64)
-        # print 'len x_out: %d'%len(x_out)
-
-        # A couple of special cases that I don't want to have to put extra checks in for:
-        if x_out[-1] < x_in[0] or x_out[0] > stop_time:
-            # We're all the way to the left of the data or all the way to the right. Fill with NaNs:
-            y_out.fill('NaN')
-        elif x_out[0] > x_in[-1]:
-            # We're after the final clock tick, but before stop_time
-            i = 0
-            while i < len(x_out) - 1:
-                if x_out[i] < stop_time:
-                    y_out[i] = y_in[-1]
-                else:
-                    y_out[i] = numpy.float('NaN')
-                i += 1
-        else:
-            i = 0
-            j = 1
-            # Until we get to the data, fill the output array with NaNs (which
-            # get ignored when plotted)
-            while x_out[i] < x_in[0]:
-                y_out[i] = numpy.float('NaN')
-                y_out[i + 1] = numpy.float('NaN')
-                y_out[i + 2] = numpy.float('NaN')
-                i += 3
-            # If we're some way into the data, we need to skip ahead to where
-            # we want to get the first datapoint from:
-            while x_in[j] < x_out[i]:
-                j += 1
-
-            # Get the first datapoint:
-            # y_out[i] = y_in[j-1]
-            # i += 1
-
-            # Get values until we get to the end of the data:
-            while j < len(x_in) and i < len(x_out) - 2:  # Leave one spare for the final data point and one because stepMode='center' requires len(y)=len(x)-1
-                # This is 'nearest neighbour on the left' interpolation. It's
-                # what we want if none of the source values checked in the
-                # upcoming loop are used:
-                y_out[i] = y_in[j - 1]
-                i += 2
-                positive_jump_value = 0
-                positive_jump_index = j - 1
-                negative_jump_value = 0
-                negative_jump_index = j - 1
-                # now find the max and min values between this x_out time point and the next x_out timepoint
-                # print i
-                while j < len(x_in) and x_in[j] < x_out[i]:
-                    jump = y_in[j] - y_out[i - 2]
-                    # would using this source value cause a bigger positive jump?
-                    if jump > 0 and jump > positive_jump_value:
-                        positive_jump_value = jump
-                        positive_jump_index = j
-                    # would using this source value cause a bigger negative jump?
-                    elif jump < 0 and jump < negative_jump_value:
-                        negative_jump_value = jump
-                        negative_jump_index = j
-
-                    j += 1
-
-                if positive_jump_index < negative_jump_index:
-                    y_out[i - 1] = y_in[positive_jump_index]
-                    y_out[i] = y_in[negative_jump_index]
-                    # TODO: We could override the x_out values with x_in[jump_index]
-                else:
-                    y_out[i - 1] = y_in[negative_jump_index]
-                    y_out[i] = y_in[positive_jump_index]
-
-                i += 1
-
-            # Get the last datapoint:
-            if j < len(x_in):
-                # If the sample rate of the raw data is low, then the current
-                # j point could be outside the current plot view range
-                # If so, decrease j so that we take a value that is within the
-                # plot view range.
-                if x_in[j] > x_out[-1] and j > 0:
-                    j -= 1
-
-                y_out[i] = y_in[j]
-                i += 1
-            # if i < len(x_out):
-            #    y_out[i] = y_in[-1]
-            #    i += 1
-            # Fill the remainder of the array with the last datapoint,
-            # if t < stop_time, and then NaNs after that:
-            while i < len(x_out) - 1:
-                if x_out[i] < stop_time:
-                    y_out[i] = y_in[-1]
-                else:
-                    y_out[i] = numpy.float('NaN')
-                i += 1
-        # return y_out # method changed to modify y_out array in place
-
-    def __resample3(self, x_in, y_in, x_out, stop_time):
-        """This is a Python implementation of the C extension. For
-        debugging and developing the C extension."""
-        y_out = numpy.empty(len(x_out))
-        i = 0
-        j = 1
-        # A couple of special cases that I don't want to have to put extra checks in for:
-        if x_out[-1] < x_in[0] or x_out[0] > stop_time:
-            # We're all the way to the left of the data or all the way to the right. Fill with NaNs:
-            while i < len(x_out):
-                y_out[i] = numpy.float('NaN')
-                i += 1
-        elif x_out[0] > x_in[-1]:
-            # We're after the final clock tick, but before stop_time
-            while i < len(x_out):
-                if x_out[i] < stop_time:
-                    y_out[i] = y_in[-1]
-                else:
-                    y_out[i] = numpy.float('NaN')
-                i += 1
-        else:
-            # Until we get to the data, fill the output array with NaNs (which
-            # get ignored when plotted)
-            while x_out[i] < x_in[0]:
-                y_out[i] = numpy.float('NaN')
-                i += 1
-            # If we're some way into the data, we need to skip ahead to where
-            # we want to get the first datapoint from:
-            while x_in[j] < x_out[i]:
-                j += 1
-            # Get the first datapoint:
-            y_out[i] = y_in[j - 1]
-            i += 1
-            # Get values until we get to the end of the data:
-            while j < len(x_in) and i < len(x_out):
-                # This is 'nearest neighbour on the left' interpolation. It's
-                # what we want if none of the source values checked in the
-                # upcoming loop are used:
-                y_out[i] = y_in[j - 1]
-                while j < len(x_in) and x_in[j] < x_out[i]:
-                    # Would using this source value cause the interpolated values
-                    # to make a bigger jump?
-                    if numpy.abs(y_in[j] - y_out[i - 1]) > numpy.abs(y_out[i] - y_out[i - 1]):
-                        # If so, use this source value:
-                        y_out[i] = y_in[j]
-                    j += 1
-                i += 1
-            # Get the last datapoint:
-            if i < len(x_out):
-                y_out[i] = y_in[-1]
-                i += 1
-            # Fill the remainder of the array with the last datapoint,
-            # if t < stop_time, and then NaNs after that:
-            while i < len(x_out):
-                if x_out[i] < stop_time:
-                    y_out[i] = y_in[-1]
-                else:
-                    y_out[i] = numpy.float('NaN')
-                i += 1
-        return y_out
 
     def _resample_thread(self):
         # logger = logging.getLogger('runviewer.resample_thread')
@@ -1372,8 +1196,7 @@ class RunViewer(LabscriptGuiApplication):
                 xnew, ynew = self.resample(shot.traces[channel][0], shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
             return inmain_later(self.plot_items[channel][shot].setData, xnew, ynew, pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
         except Exception:
-            #self._resample = True
-            pass
+            logger.exception(f'Could not resample {channel}')
 
     @inmain_decorator(wait_for_return=True)
     def channel_checked_and_enabled(self, channel):
@@ -1428,14 +1251,7 @@ class RunViewer(LabscriptGuiApplication):
             check_item.setCheckState(state)
 
     def update_plot_positions(self):
-        # remove all widgets
-        layout_items = {}
-        for i in range(self.ui.plot_layout.count()):
-            if i == 0:
-                continue
-            item = self.ui.plot_layout.takeAt(i)
-
-        # add all widgets
+        # addWidget moves a widget already in the layout to the end:
         for i in range(self.channel_model.rowCount()):
             check_item = self.channel_model.item(i, CHANNEL_MODEL__CHECKBOX_INDEX)
             channel = str(check_item.text())
@@ -1466,9 +1282,6 @@ class Shot(object):
         self._shutter_times = None
         self._shutter_calibrations = {}
 
-        # TODO: Get this dynamically
-        device_list = ['PulseBlaster', 'NI_PCIe_6363', 'NI_PCI_6733']
-
         # Load connection table
         self.connection_table = ConnectionTable(path)
 
@@ -1489,10 +1302,6 @@ class Shot(object):
                 for name, open_delay, close_delay in numpy.array(file['calibrations']['Shutter']):
                     name = ensure_str(name)
                     self._shutter_calibrations[name] = [open_delay, close_delay]
-
-    def delete_cache(self):
-        self._channels = None
-        self._traces = None
 
     def _load(self):
         if self._channels is None:
@@ -1517,12 +1326,6 @@ class Shot(object):
             if "time_markers" in file:
                 for row in file["time_markers"]:
                     self._markers[row['time']] = {'color': row['color'].tolist()[0], 'label': row['label']}
-            elif "runviewer" in file:
-                for time, val in file["runviewer"]["markers"].attrs.items():
-                    props = val.strip('{}}').rsplit(",", 1)
-                    color = list(map(int, props[0].split(":")[1].strip(" ()").split(",")))
-                    label = props[1].split(":")[1]
-                    self._markers[float(time)] = {'color': color, 'label': label}
             if 0 not in self._markers:
                 self._markers[0] = {'color': [0,0,0], 'label': 'Start'}
             if self.stop_time not in self._markers:
@@ -1573,13 +1376,6 @@ class Shot(object):
                 logger.info('Failed to load device (unknown name, device object does not have attribute name), exception was:\n'+
                             ''.join(traceback.format_exception(type(e), e, e.__traceback__)))
 
-        # backwards compat
-        with h5py.File(self.path, 'r') as file:
-            if "runviewer" in file:
-                if "shutter_times" in file["runviewer"]:
-                    for name, val in file["runviewer"]["shutter_times"].attrs.items():
-                        self._shutter_times[name] = {float(key_value.split(":")[0]): int(key_value.split(":")[1]) for key_value in val.strip('{}}').split(",")}
-
     def scaled_times(self, channel):
         if self.cached_scaler != app.scalehandler:
             self.cached_scaler = app.scalehandler
@@ -1595,10 +1391,6 @@ class Shot(object):
             self._load()
 
         return self._channels.keys()
-
-    def clear_cache(self):
-        # clear cache variables to cut down on memory usage
-        pass
 
     @property
     def markers(self):
@@ -1625,28 +1417,6 @@ class Shot(object):
         # if self._scalehandler is None:
             # self._load()
         # return self._scalehandler
-
-
-class TempShot(Shot):
-    def __init__(self, i):
-        Shot.__init__(self, 'shot %d' % i)
-        self._channels = ['Bx', 'By', 'Bz', 'Bq']
-
-        self.stop_time = i + 1
-
-        self.traces = {}
-        no_x_points = 10000
-        for channel in self.channels:
-            # self.traces[channel] = (numpy.linspace(0,10,no_x_points), numpy.random.rand(no_x_points))
-            x_points = numpy.linspace(0, self.stop_time, no_x_points)
-            self.traces[channel] = (x_points, (i + 1) * numpy.sin(x_points * numpy.pi + i / 11.0 * 2 * numpy.pi))
-
-    @property
-    def channels(self):
-        return self._channels
-
-    def get_traces(self):
-        return self.traces
 
 
 class RunviewerServer(ZMQServer):

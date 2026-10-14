@@ -236,43 +236,6 @@ QToolButton:hover:checked {
          <property name="spacing">
           <number>3</number>
          </property>
-         <item row="0" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
-           <item>
-            <widget class="QPushButton" name="group_channel">
-             <property name="toolTip">
-              <string>Group selected channels</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="delete_group">
-             <property name="toolTip">
-              <string>Delete selected group</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer_2">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
-         </item>
          <item row="1" column="1">
           <widget class="TreeView" name="channel_treeview">
            <property name="editTriggers">
