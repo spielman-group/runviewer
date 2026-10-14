@@ -182,18 +182,11 @@ Should moving rows be a method of the shared views
 All three models are `QStandardItemModel`s, so one take-and-insert move serves
 them all, and the extra work after it fits a signal that carries the order.
 
-Proposal: the view method.
-- labscript-utils: `TreeView` and `TableView` gain
-  `move_selected_rows(direction)`. It reads the selection, takes the new order
-  from `moved_row_order`, moves the rows, keeps them selected, and emits
-  `rowsMoved(order)`. A later drag and drop would emit the same signal, so the
-  apps would not change again. About +25 lines, in a small mixin beside
-  `LeftClickMixin`, which is about clicks.
-- runviewer: `channel_treeview` becomes the shared `TreeView` (a `.ui` class
-  change; it only adds the click signals). The buttons call the method, and
-  `rowsMoved` connects to `update_plot_positions`. `_move_channels` goes.
-- lyse: the buttons call the method; `rowsMoved` reorders `self.routines`. The
-  sort role and `sortByColumn` in `reorder` go.
-- runmanager: the four `on_axis_*_clicked` go; `rowsMoved` connects to
-  `update_axes_indentation`. About −80 lines.
-- `moved_row_order` stays, as the method's helper.
+Done (Ian approved the view method): labscript-utils 5362568
+(`MovableRowsMixin` in `qtwidgets/leftclick.py`: `move_selected_rows(direction)`,
+`reorder_rows(order)` and the signal `rowsReordered(order)`; `TreeView` and
+`TableView` take it), runviewer c96d2f7, lyse 03c8825 (its sort-index role and
+`reorder` go), runmanager e3e03ac (its four `on_axis_*_clicked` go; its own
+`TreeView` takes the mixin). The review found that the move cleared the view's
+current index, which broke runmanager's keyboard handling; labscript-utils keeps
+it. `moved_row_order` stays as the method's helper.
