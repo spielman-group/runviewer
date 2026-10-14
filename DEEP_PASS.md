@@ -223,3 +223,28 @@ suspected bug, not dead code. If it is confirmed by running it, it goes in
 | `maintenance/3.0.x` | origin | Upstream's own maintenance branch (the same tip on `upstream`), copied to our fork; never ours | delete on origin |
 | `spielman_retired/share` | local and origin | Retired, reference only | keep |
 | `master`, `Production`, `Development`, `CodeHealth` | | tiers and the campaign | keep |
+
+Done (Ian approved L1-L8, the removal loop in `update_plot_positions`, and the
+branch deletions): runviewer 8493cc9 and, from the review, e2a8216.
+- `update_plot_positions`: run on the real window, the plots stay in channel
+  order with the time axis last, and an unticked channel's plot is hidden.
+  Channels are never removed from the list, so no plot needs taking out.
+- Real shots from 2019 and 2023 load the same channels and markers as before.
+- From the review: each resample is handed its plot item, taken on the main
+  thread, so a shot unticked mid-resample no longer logs a KeyError; the
+  commented-out branch left by L7 goes; the emptied grid row is closed.
+- Branches deleted: `ServerInterfaces` (local and origin, tip 22c8808),
+  `RunmanagerTOML` (origin; its tip was not kept locally) and
+  `maintenance/3.0.x` (origin, tip 8f441c5, still on `upstream`).
+
+## Step 2.5: documents, TODO, FIXME, XXX
+
+| # | What | Proposal |
+| --- | --- | --- |
+| T1 | `resample`: `# TODO: Only finely sample the currently visible region`, with a commented-out `x_out` line | Done already: `x_out` spans only `xmin` to `xmax`. Delete both lines |
+| T2 | `resample`: `# TODO: investigate only resampling when necessary`, eight lines on pyqtgraph and stepMode | Not worthwhile: the C resampler is fast and handles the edge cases the note lists. Delete |
+| T3 | `docs/source/conf.py`: `# TODO`, `desktop-app`, `spinapi/pynivision/etc` under `intersphinx_mapping` | The same boilerplate sits in every suite repo's `conf.py`. Not worthwhile here alone: delete the three lines, and flag it to the coordinator for the other repos |
+| C1 | About twenty other commented-out lines in `__main__.py`: an unused colour list (176), `non_linear_time` (341, 457), `_channels_list` (363), `delta_t` (466), marker items (486), colour and icon (832-833), path items (888-890), `update_channels_treeview` (897), channel-name items (949-951), hidden-plot autorange (979-982), two old `plot` calls (1031, 1076), print statements (1114), the resample logger (1160), two channel logs (1203, 1206), `_scalehandler` (1322), traces caching (1403-1404) | Delete with the TODOs, as the campaign's step 5 asks. The `get_scaled_time` examples (134-138) are documentation and stay |
+| D1 | `docs/source/usage.rst` does not mention the configuration actions this pass added (Load, Revert, Save, Save as; the layout saved on quit) | Add one sentence beside the channel-configuration sentence |
+
+Nothing else in `README.md`, `introduction.rst`, `usage.rst` or `AGENTS.md` is spent.
