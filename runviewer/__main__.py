@@ -207,17 +207,26 @@ class ColourDelegate(QItemDelegate):
 
 
 class RunviewerMainWindow(ThemedWindow, QMainWindow):
-    pass
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+
+    def closeEvent(self, event):
+        if self.app.offer_to_save_changes('Quit runviewer', quitting=True):
+            event.accept()
+        else:
+            event.ignore()
 
 
 class RunViewer(LabscriptGuiApplication):
     app_name = 'runviewer'
     default_config_filename = 'runviewer.toml'
+    geometry_keys = ('window_size', 'window_pos', 'splitter', 'splitter_2')
 
     def __init__(self, exp_config):
         splash.update_text('loading graphical interface')
         self.ui = UiLoader().load(
-            os.path.join(runviewer_dir, 'main.ui'), RunviewerMainWindow()
+            os.path.join(runviewer_dir, 'main.ui'), RunviewerMainWindow(self)
         )
         self.exp_config = exp_config
         self.init_config_window_title()
