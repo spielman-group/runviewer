@@ -745,12 +745,9 @@ class RunViewer(LabscriptGuiApplication):
                 popup_warning = True
                 raise
         if popup_warning:
-            message = QMessageBox()
-            message.setText("Warning: Some shots were not loaded because they were not valid hdf5 files")
-            message.setIcon(QMessageBox.Warning)
-            message.setWindowTitle("Runviewer")
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
+            self.error_dialog(
+                'Some shots were not loaded because they were not valid hdf5 files'
+            )
 
     def on_remove_shots(self, confirm=True):
         # Get the selection model from the treeview
@@ -761,9 +758,7 @@ class RunViewer(LabscriptGuiApplication):
         selected_row_list.sort(reverse=True)
 
         if confirm:
-            reply = QMessageBox.question(self.ui, 'Runviewer', 'Remove {} shots?'.format(len(selected_row_list)),
-                                           QMessageBox.Yes | QMessageBox.No)
-            if reply == QMessageBox.No:
+            if not self.question_dialog(f'Remove {len(selected_row_list)} shots?'):
                 return
 
         for row in selected_row_list:
