@@ -358,7 +358,7 @@ class RunViewer(LabscriptGuiApplication):
 
         self.last_save_config_file = None
         self.last_save_data = None
-        self.set_config_window_title(self.get_default_config_file())
+        self.load_configuration(self.get_default_config_file())
 
         self.last_opened_shots_folder = exp_config.get('paths', 'experiment_shot_storage')
 
