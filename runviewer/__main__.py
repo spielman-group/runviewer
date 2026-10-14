@@ -77,6 +77,7 @@ from labscript_utils.qtwidgets.application import (
     LabscriptGuiApplication,
     exec_qapplication,
 )
+from labscript_utils.qtwidgets.themed_window import ThemedWindow
 from labscript_utils.ls_zprocess import ZMQServer, ProcessTree
 import labscript_utils.qtwidgets.file_dialogs as file_dialogs
 process_tree = ProcessTree.instance()
@@ -205,13 +206,19 @@ class ColourDelegate(QItemDelegate):
         editor.setGeometry(option.rect)
 
 
+class RunviewerMainWindow(ThemedWindow, QMainWindow):
+    pass
+
+
 class RunViewer(LabscriptGuiApplication):
     app_name = 'runviewer'
     default_config_filename = 'runviewer.toml'
 
     def __init__(self, exp_config):
         splash.update_text('loading graphical interface')
-        self.ui = UiLoader().load(os.path.join(runviewer_dir, 'main.ui'))
+        self.ui = UiLoader().load(
+            os.path.join(runviewer_dir, 'main.ui'), RunviewerMainWindow()
+        )
         self.exp_config = exp_config
         self.init_config_window_title()
 
