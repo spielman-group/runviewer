@@ -13,18 +13,13 @@ configurations live in, and that the name offered is not the runviewer state
 file -- which sits in that same folder, holds something else entirely, and is
 the one file an operator must not be invited to overwrite from this dialog.
 
-Pinned alongside it is what becomes of the name the panel returns, whatever the
-panel or the operator made of it: the file written is a ``.toml`` file, and a
-name already ending in an app config extension has that extension replaced
-rather than added to. Those two rules are ``appconfig_path_with_suffix``, and
-they are pinned here because the extension a dialog offers and the extension its
-file ends up with are one contract, not two.
+Pinned alongside it is that the channels reach the file written. What that
+file is called is ``save_appconfig``'s rule, tested in labscript-utils.
 
 The panel belongs to the operating system and cannot be driven from a test, so
 the seam under test is the call into it: ``QFileDialog`` is replaced in
 ``file_dialogs``, which makes the call, and the arguments it was given are read
-back. What the file is called is read from the directory afterwards, the name
-being the whole of what is under test.
+back.
 """
 import os
 import shutil
@@ -84,16 +79,6 @@ class FakeRunViewer(object):
         self.channel_model = FakeChannelModel(
             [('ni_card/ao0', True), ('ni_card/ao1', False)]
         )
-
-    def get_default_config_file(self, ensure_directory=False):
-        """The runviewer state file, as ``LabscriptApplication`` returns it.
-
-        The handler does not call this. It is here so that the test which says
-        the offered name is not this file can fail when it is: a stand-in
-        without the method would raise instead, and an error raised reaching
-        the assertion is not the assertion doing its work.
-        """
-        return os.path.join(self.default_config_path, RunViewer.default_config_filename)
 
 
 class FakeFileDialog(object):
@@ -171,13 +156,8 @@ class SaveChannelConfigDialogTests(unittest.TestCase):
         )
 
 
-class SaveChannelConfigExtensionTests(unittest.TestCase):
-    """What the file is called, for every name the panel can hand back.
-
-    An operator can clear the extension the panel offers, and a panel asked for
-    a type the host resolves elsewhere can return one nobody asked for, so the
-    name that arrives here is not necessarily the name that was offered.
-    """
+class SaveChannelConfigContentTests(unittest.TestCase):
+    """What the file written holds."""
 
     def setUp(self):
         self.folder = tempfile.mkdtemp()
@@ -199,52 +179,7 @@ class SaveChannelConfigExtensionTests(unittest.TestCase):
         self.app.on_save_channel_config()
         return sorted(os.listdir(self.folder))
 
-    def test_a_name_returned_without_an_extension_is_given_one(self):
-        self.assertEqual(
-            self.written('test'),
-            ['test.toml'],
-            'a bare stem becomes a .toml file',
-        )
-
-    def test_a_name_returned_with_the_extension_keeps_it_as_it_is(self):
-        self.assertEqual(
-            self.written('test.toml'),
-            ['test.toml'],
-            'the extension is not doubled',
-        )
-
-    def test_a_name_returned_with_a_foreign_extension_keeps_it_and_gains_toml(self):
-        # What a native panel hands back when it resolves the name filter
-        # through the host's type database instead of preserving a name.
-        self.assertEqual(
-            self.written('test.cfg'),
-            ['test.cfg.toml'],
-            'an extension that is not an app config extension is part of the '
-            'name, so the .toml goes after it rather than over it',
-        )
-
-    def test_a_legacy_ini_name_has_its_extension_replaced(self):
-        # .ini is the app config extension runviewer still reads. A name
-        # carrying it is the same configuration, so the TOML file takes its
-        # place rather than sitting beside it as test.ini.toml.
-        self.assertEqual(
-            self.written('test.ini'),
-            ['test.toml'],
-            'a legacy extension is replaced, not appended to',
-        )
-
-    def test_a_name_whose_stem_contains_dots_keeps_all_of_them(self):
-        # Channel configurations are named after apparatus and shots, which
-        # carry dots; replacing after the last one would address another file.
-        self.assertEqual(
-            self.written('rb.87.imaging'),
-            ['rb.87.imaging.toml'],
-            'only an app config extension is replaced',
-        )
-
     def test_the_channels_reach_the_file_that_was_written(self):
-        # The extension rules are about naming; this is the one test that says
-        # the named file holds what the dialog was opened to save.
         self.written('test')
 
         config = main_module.load_appconfig(os.path.join(self.folder, 'test.toml'))
