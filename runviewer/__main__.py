@@ -31,8 +31,6 @@ import sys
 import time
 import threading
 from queue import Queue
-import ast
-import pprint
 import concurrent.futures
 import traceback
 
@@ -93,30 +91,27 @@ CHANNEL_MODEL__CHANNEL_INDEX = 0
 
 
 def format_time(input_sec):
-    # inout is the time in sec
+    # input_sec is in seconds
     if input_sec >= 1:
-        return "{:.3g}s".format(input_sec)
+        return f"{input_sec:.3g}s"
     elif input_sec >= 1e-3:
-        return "{:.3g}ms".format(input_sec * 1e3)
+        return f"{input_sec * 1e3:.3g}ms"
     elif input_sec >= 1e-6:
-        return "{:.3g}us".format(input_sec * 1e6)
+        return f"{input_sec * 1e6:.3g}us"
     elif input_sec >= 1e-9:
-        return "{:.3g}ns".format(input_sec * 1e9)
+        return f"{input_sec * 1e9:.3g}ns"
     elif input_sec >= 1e-12:
-        return "{:.3g}ps".format(input_sec * 1e12)
+        return f"{input_sec * 1e12:.3g}ps"
     elif input_sec >= 1e-15:
-        return "{:.3g}fs".format(input_sec * 1e15)
+        return f"{input_sec * 1e15:.3g}fs"
     elif input_sec >= 1e-18:
-        return "{:.3g}as".format(input_sec * 1e18)
+        return f"{input_sec * 1e18:.3g}as"
     else:
         return str(input_sec) + "s"
 
 
 def int_to_enum(enum_list, value):
-    """stupid hack to work around the fact that PySide screws with the type of a variable when it goes into a model. Enums are converted to ints, which then
-     can't be interpreted by QColor correctly (for example)
-     unfortunately Qt doesn't provide a python list structure of enums, so you have to build the list yourself.
-    """
+    """Return the member of enum_list equal to value, which a model hands back as an int."""
 
     for item in enum_list:
         if item == value:
@@ -124,16 +119,11 @@ def int_to_enum(enum_list, value):
     return value
 
 
-class ScaleHandler():
+class ScaleHandler:
 
     def __init__(self, input_times, target_positions, stop_time):
-        # input_times is a list (may be unsorted) of times which should be scaled evenly with target_length
-        # an input list of [1,2,4,6] and target_length of 1.0 will result in:
-        # get_scaled_time(1)   -> 1
-        # get_scaled_time(1.5) -> 1.5
-        # get_scaled_time(3)   -> 2.5
-        # get_scaled_time(4)   -> 3
-        # get_scaled_time(5)   -> 3.5   ...
+        # Each of input_times maps to its target position, and times between them
+        # are interpolated linearly.
         self.org_stop_time = float(stop_time)
 
         if not all((x >= 0) and (x <= self.org_stop_time) for x in input_times):
@@ -503,10 +493,10 @@ class RunViewer(LabscriptGuiApplication):
                     plot_data = ui.plotItem.listDataItems()[0].getData()
                     if plot_data[0] is not None and scaled_t is not None:
                         nearest_index = numpy.abs(plot_data[0] - scaled_t).argmin() - 1
-                        y_val = "{:.2f}".format(plot_data[1][nearest_index])
+                        y_val = f'{plot_data[1][nearest_index]:.2f}'
                     else:
                         y_val = '-'
-                    text = "Plot: {} \nTime: {:.9f}s\nValue: {}".format(name, unscaled_t, y_val)
+                    text = f'Plot: {name} \nTime: {unscaled_t:.9f}s\nValue: {y_val}'
                     QtWidgets.QToolTip.showText(pos, text)
 
     def _reset_linear_time(self):
@@ -690,14 +680,8 @@ class RunViewer(LabscriptGuiApplication):
                     self.channel_model.insertRow(row, check_item)
 
     def on_save_channel_config(self):
-        # The panel is offered a filename rather than just the folder. A save
-        # panel with no extension to preserve supplies one of its own, taken
-        # from the host's type database rather than from the name filter below,
-        # which is not necessarily the extension asked for. Given a name it
-        # keeps that extension and typing replaces only the stem, so 'untitled'
-        # is what the operator types over and '.toml' is what survives. The
-        # stem is not the default configuration file's, which sits in this same
-        # folder and holds the runviewer state rather than a channel list.
+        # A file name keeps '.toml', where a bare folder lets the macOS panel choose
+        # an extension. 'untitled' is not the state file, which shares the folder.
         suggested_file = os.path.join(self.default_config_path, 'untitled.toml')
         save_file = file_dialogs.save_file(
             self.ui,
@@ -743,10 +727,7 @@ class RunViewer(LabscriptGuiApplication):
         for file in selected_files:
             try:
                 filepath = str(file)
-                # Qt has this weird behaviour where if you type in the name of a file that exists
-                # but does not have the extension you have limited the dialog to, the OK button is greyed out
-                # but you can hit enter and the file will be selected.
-                # So we must check the extension of each file here!
+                # The dialog accepts a typed name that its filter excludes:
                 if filepath.endswith('.h5') or filepath.endswith('.hdf5'):
                     self.load_shot(filepath)
                 else:
@@ -1086,13 +1067,7 @@ class RunViewer(LabscriptGuiApplication):
         return view_range[0][0], view_range[0][1], dx
 
     def resample(self, data_x, data_y, xmin, xmax, stop_time, num_pixels):
-        """This is a function for downsampling the data before plotting
-        it. Unlike using nearest neighbour interpolation, this method
-        preserves the features of the plot. It chooses what value to
-        use based on what values within a region are most different
-        from the values it's already chosen. This way, spikes of a short
-        duration won't just be skipped over as they would with any sort
-        of interpolation."""
+        """Downsample a trace for plotting, keeping short spikes visible."""
         x_out = numpy.float64(numpy.linspace(xmin, xmax, 3 * 2000 + 2))
         y_out = numpy.empty(len(x_out) - 1, dtype=numpy.float64)
         data_x = numpy.float64(data_x)
@@ -1134,10 +1109,6 @@ class RunViewer(LabscriptGuiApplication):
 
     def __pool_resample(self, channel, shot, colour, plot_item, xmin, xmax, dx):
         try:
-            # We go a bit outside the visible range so that scrolling
-            # doesn't immediately go off the edge of the data, and the
-            # next resampling might have time to fill in more data before
-            # the user sees any empty space.
             if self.scale_time:
                 xnew, ynew = self.resample(shot.scaled_times(channel), shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
             else:
@@ -1210,7 +1181,7 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.plot_layout.addWidget(self._time_axis_plot[0])
 
 
-class Shot(object):
+class Shot:
     def __init__(self, path):
         self.path = path
 
@@ -1298,7 +1269,7 @@ class Shot(object):
 
     def _load_device(self, device, clock=None):
         try:
-            logger.info('loading %s' % device.name)
+            logger.info(f'loading {device.name}')
             module = device.device_class
             # Load the master pseudoclock class
             device_class = device_registry.get_runviewer_parser(module)

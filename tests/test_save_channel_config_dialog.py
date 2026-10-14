@@ -1,25 +1,20 @@
-"""The save panel behind *Save channel config*.
+#####################################################################
+#                                                                   #
+# /tests/test_save_channel_config_dialog.py                         #
+#                                                                   #
+# Copyright 2026, JQI                                               #
+# Author: Ian Spielman                                              #
+#                                                                   #
+# This file is part of runviewer, in the labscript suite            #
+# (see http://labscriptsuite.org), and is licensed under the        #
+# Simplified BSD License. See the license.txt file in the root of   #
+# the project for the full license.                                 #
+#                                                                   #
+#####################################################################
+"""What *Save channel config* offers the save panel, and what it writes.
 
-A save panel decides the extension of the file it returns. Given a name that
-already has one it keeps that one, and typing replaces only the stem. Given a
-bare folder it has no extension to preserve and supplies one of its own, taken
-from the host's type database rather than from the name filter the dialog asked
-for -- so the file that comes back need not be a ``.toml`` file at all, and
-nothing between the panel and ``save_appconfig`` would notice.
-
-What is pinned here is that the handler hands the panel a filename carrying the
-extension a channel configuration is meant to have, in the folder those
-configurations live in, and that the name offered is not the runviewer state
-file -- which sits in that same folder, holds something else entirely, and is
-the one file an operator must not be invited to overwrite from this dialog.
-
-Pinned alongside it is that the channels reach the file written. What that
-file is called is ``save_appconfig``'s rule, tested in labscript-utils.
-
-The panel belongs to the operating system and cannot be driven from a test, so
-the seam under test is the call into it: ``QFileDialog`` is replaced in
-``file_dialogs``, which makes the call, and the arguments it was given are read
-back.
+The panel belongs to the operating system, so ``QFileDialog`` is replaced in
+``file_dialogs`` and the arguments it was given are read back.
 """
 import os
 import shutil
@@ -30,18 +25,12 @@ import labscript_utils.qtwidgets.file_dialogs as file_dialogs
 from labscript_utils.labconfig import load_appconfig
 from qtutils.qt.QtCore import Qt
 
-# fixtures stubs the splash and does the guarded import of the application,
-# once, for every test module. Importing runviewer.__main__ here instead would
-# show the startup banner.
+# From fixtures, which stubs the splash before importing the application:
 from fixtures import RunViewer
 
 
 class FakeChannelModel(object):
-    """The rows ``on_save_channel_config`` reads to build the channel list.
-
-    A ``QStandardItemModel`` would need a ``QApplication``, and the handler
-    asks it for four things.
-    """
+    """The rows ``on_save_channel_config`` reads, without a ``QApplication``."""
 
     class Item(object):
         def __init__(self, name, checked):
@@ -65,11 +54,7 @@ class FakeChannelModel(object):
 
 
 class FakeRunViewer(object):
-    """Enough of a RunViewer for ``on_save_channel_config`` to run.
-
-    ``RunViewer.__init__`` builds the whole application, which this one handler
-    has no use for.
-    """
+    """Enough of a RunViewer for ``on_save_channel_config`` to run."""
 
     on_save_channel_config = RunViewer.on_save_channel_config
 
@@ -84,12 +69,7 @@ class FakeRunViewer(object):
 
 
 class FakeFileDialog(object):
-    """Stands in for ``QFileDialog`` in ``file_dialogs``.
-
-    The dialog helpers look ``QFileDialog`` up in their own module, so rebinding
-    the name there is enough to intercept the call. Doing it this way leaves the
-    real Qt class untouched for everything else in the process.
-    """
+    """Stands in for ``QFileDialog`` in ``file_dialogs``, leaving Qt's own untouched."""
 
     def __init__(self):
         # Directories the panel was opened at, one per call, and the name it is
