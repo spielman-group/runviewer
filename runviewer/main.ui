@@ -274,7 +274,7 @@ QToolButton:hover:checked {
           </layout>
          </item>
          <item row="1" column="1">
-          <widget class="QTreeView" name="channel_treeview">
+          <widget class="TreeView" name="channel_treeview">
            <property name="editTriggers">
             <set>QAbstractItemView::NoEditTriggers</set>
            </property>
@@ -737,6 +737,13 @@ QToolButton:hover:checked {
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>TreeView</class>
+   <extends>QTreeView</extends>
+   <header>qtutils/widgets.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../Anaconda/Lib/site-packages/qtutils/icons/icons.qrc"/>
  </resources>

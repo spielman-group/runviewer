@@ -76,7 +76,7 @@ from labscript_utils.qtwidgets.application import (
     LabscriptGuiApplication,
     exec_qapplication,
 )
-from labscript_utils.qtwidgets.row_order import moved_row_order
+from labscript_utils.qtwidgets.leftclick import TreeView
 from labscript_utils.qtwidgets.themed_window import ThemedWindow
 from labscript_utils.ls_zprocess import ZMQServer, ProcessTree
 import labscript_utils.qtwidgets.file_dialogs as file_dialogs
@@ -225,7 +225,9 @@ class RunViewer(LabscriptGuiApplication):
 
     def __init__(self, exp_config):
         splash.update_text('loading graphical interface')
-        self.ui = UiLoader().load(
+        loader = UiLoader()
+        loader.registerCustomWidget(TreeView)
+        self.ui = loader.load(
             os.path.join(runviewer_dir, 'main.ui'), RunviewerMainWindow(self)
         )
         self.exp_config = exp_config
@@ -326,12 +328,18 @@ class RunViewer(LabscriptGuiApplication):
         # connect signals
         self.ui.reset_x_axis.clicked.connect(self.on_x_axis_reset)
         self.ui.reset_y_axis.clicked.connect(self.on_y_axes_reset)
-        self.ui.channel_move_up.clicked.connect(lambda: self._move_channels('up'))
-        self.ui.channel_move_down.clicked.connect(lambda: self._move_channels('down'))
-        self.ui.channel_move_to_top.clicked.connect(lambda: self._move_channels('top'))
-        self.ui.channel_move_to_bottom.clicked.connect(
-            lambda: self._move_channels('bottom')
+        channels = self.ui.channel_treeview
+        self.ui.channel_move_up.clicked.connect(lambda: channels.move_selected_rows('up'))
+        self.ui.channel_move_down.clicked.connect(
+            lambda: channels.move_selected_rows('down')
         )
+        self.ui.channel_move_to_top.clicked.connect(
+            lambda: channels.move_selected_rows('top')
+        )
+        self.ui.channel_move_to_bottom.clicked.connect(
+            lambda: channels.move_selected_rows('bottom')
+        )
+        channels.rowsReordered.connect(lambda order: self.update_plot_positions())
         self.ui.enable_selected_shots.clicked.connect(self._enable_selected_shots)
         self.ui.disable_selected_shots.clicked.connect(self._disable_selected_shots)
         self.ui.add_shot.clicked.connect(self.on_add_shot)
@@ -1418,20 +1426,6 @@ class RunViewer(LabscriptGuiApplication):
         for row in selected_row_list:
             check_item = self.shot_model.item(row, SHOT_MODEL__CHECKBOX_INDEX)
             check_item.setCheckState(state)
-
-    def _move_channels(self, direction):
-        selection_model = self.ui.channel_treeview.selectionModel()
-        selected = [index.row() for index in selection_model.selectedRows()]
-        order = moved_row_order(self.channel_model.rowCount(), selected, direction)
-        rows = [self.channel_model.takeRow(0) for _ in order]
-        for row in sorted(range(len(rows)), key=order.__getitem__):
-            self.channel_model.appendRow(rows[row])
-        for row in selected:
-            selection_model.select(
-                self.channel_model.indexFromItem(rows[row][0]),
-                QItemSelectionModel.Select | QItemSelectionModel.Rows,
-            )
-        self.update_plot_positions()
 
     def update_plot_positions(self):
         # remove all widgets
