@@ -185,7 +185,7 @@ class SaveChannelConfigContentTests(unittest.TestCase):
         config = main_module.load_appconfig(os.path.join(self.folder, 'test.toml'))
 
         self.assertEqual(
-            config['runviewer_state']['channels'],
+            config['runviewer_channels']['channels'],
             [['ni_card/ao0', True], ['ni_card/ao1', False]],
             'each channel is stored with its checked state',
         )

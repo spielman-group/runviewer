@@ -406,9 +406,9 @@ class RunViewer(LabscriptGuiApplication):
         # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
         appconfig, save_target = load_appconfig(filename, return_save_path=True)
         save_data = appconfig.get('runviewer_state', {})
-        # A channel configuration shares the table, and saving the layout over it
-        # on quitting would lose its channels:
-        if 'channels' in save_data:
+        # Saving the layout over a channel configuration on quitting would lose its
+        # channels:
+        if 'runviewer_channels' in appconfig or 'channels' in save_data:
             self.error_dialog(
                 f'{filename} is a channel configuration; use Load channel config.'
             )
@@ -677,8 +677,11 @@ class RunViewer(LabscriptGuiApplication):
         )
         if config_file:
             # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
-            runviewer_config = load_appconfig(config_file).get('runviewer_state', {})
-            channels = runviewer_config.get('channels', {})
+            appconfig = load_appconfig(config_file)
+            # Channel configurations saved before they had their own table:
+            channels = appconfig.get(
+                'runviewer_channels', appconfig.get('runviewer_state', {})
+            ).get('channels', [])
 
             for row, (channel, checked) in enumerate(channels):
                 check_items = self.channel_model.findItems(channel)
@@ -719,7 +722,7 @@ class RunViewer(LabscriptGuiApplication):
                 item = self.channel_model.item(row)
                 channels.append((item.text(), item.checkState() == Qt.Checked))
 
-            save_appconfig(save_file, {'runviewer_state': {'channels': channels}})
+            save_appconfig(save_file, {'runviewer_channels': {'channels': channels}})
 
     def on_toggle_shutter(self, checked, current_shot):
         for channel in self.shutter_lines:
