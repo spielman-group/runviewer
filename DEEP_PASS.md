@@ -95,3 +95,45 @@ move into a parent. Already shared by runviewer: `LabscriptApplication`
 | H | `LinkIndicator` | not used | nothing: runviewer calls no other app | none | no |
 
 The false title in E is listed in `KNOWN_ISSUES.md`.
+
+## Step 2.1: behaviour no one asked for
+
+The source is `git diff master CodeHealth`, leaving out the approved contract
+and shared-GUI round (193d554..66bd6df). Every behaviour the fork added traces
+to a request or a suite-wide decision, so there are **no candidates**.
+
+| Behaviour | Commits | Where it was asked for |
+| --- | --- | --- |
+| TOML config files; legacy INI read and converted | 9d26a24, fbf846e, a6a5502, cda43b2 | `toml` and `RunmanagerTOML` in `CODEX.md`: TOML as the suite's config format. The INI path is for step 4 |
+| Window geometry saved in the config | a6a5502 | `RunmanagerTOML` in `CODEX.md`; upstream already had the two state actions in `main.ui`, unwired. Superseded by the approved A, E and F |
+| Config path in the window title | 01b5931 | `UpdatedTitleBars` in `CODEX.md`; approved again as E |
+| macOS display name | 2da35fe, 6e3fe1d | `MacOS` in `CODEX.md`; its `desktop-app` part went upstream |
+| Channel-config save panel offers `untitled.toml` | 1897e32, c23c527 | The macOS panel bug recorded in shared memory (`macos-save-panel-invents-extensions.md`) |
+| Request protocol for the server, `RunviewerClient` | 4377c47, 1ba24c9, 22c8808 | `issues/server_interfaces_2026_09_25.md`, step 3 |
+| Shared version, dialogs, event loop, docs, setuptools_scm scheme | a5ef546, 4db574e, 0ec3be3, b39a93e, fa6b8d5 | The campaign's step 2 and 5 rounds in labscript-utils, approved by Ian |
+
+Searched: `CODEX.md`, the meta repo's `issues/`, shared memory, and each
+commit's message and branch. Users reached: the operator through the menus and
+the window, and runmanager through `RunviewerClient`.
+
+A note for step 6, not behaviour: the fork's TOML branch reverted upstream's
+`from qtutils.qt import QtCore, QtGui, QtWidgets` to star imports from
+`qtutils.qt.QtCore`, `QtGui` and `QtWidgets`, against labscript-style.
+
+## Step 2.2: duplication
+
+Searched: the librarian's map (`labscript-library/capabilities.md`,
+`notes/runviewer.txt`), and `git grep` over labscript-utils, lyse, runmanager,
+blacs and labscript-devices for each runviewer routine below. Positive control:
+the same searches found lyse's four move handlers.
+
+| # | What | Copies | Origin | Proposal |
+| --- | --- | --- | --- | --- |
+| D1 | `.toml` suffix applied before `save_appconfig` | `__main__.py` `on_save_channel_config` (the `appconfig_path_with_suffix` line and its comment), and `save_appconfig` itself | fork, c23c527 | Delete runviewer's line and comment: with it gone, the file is still named the same (checked by mutation in step 1). About −9 lines |
+| D2 | Move the selected rows up, down, to top, to bottom | runviewer `_move_up`, `_move_down`, `_move_top`, `_move_bottom` (about 80 lines, four near-copies); lyse `routines.py` `on_move_*_clicked` (four more, computing a new row order) | upstream, both | (a) runviewer only: one method with a direction argument, about −50 lines. (b) Suite: one function in `labscript_utils.qtwidgets` that returns the new row order for a selection and a direction, used by runviewer and lyse; two repos, about −100 lines in all |
+| D3 | Python resampling, `__resample3` and `__resample4` | the C extension `labscript_c_extensions.runviewer.resample`, which is what runs | upstream | Dead (nothing calls them; see the mapping list), so it belongs to step 4, not here |
+
+Considered and not proposed: `RunviewerClient.add_shot` beside `LyseClient.add_shot`
+(the ServerInterfaces spec gives each tool its own client); reading
+`time_markers` in runviewer and BLACS's progress bar (one line each, different
+uses).
