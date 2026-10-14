@@ -367,7 +367,10 @@ class RunViewer(LabscriptGuiApplication):
 
         self.last_save_config_file = None
         self.last_save_data = None
-        self.load_configuration(self.get_default_config_file())
+        try:
+            self.load_configuration(self.get_default_config_file())
+        except Exception:
+            logger.exception('Could not load the runviewer configuration')
 
         self.last_opened_shots_folder = exp_config.get('paths', 'experiment_shot_storage')
 
@@ -401,6 +404,13 @@ class RunViewer(LabscriptGuiApplication):
         # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
         appconfig, save_target = load_appconfig(filename, return_save_path=True)
         save_data = appconfig.get('runviewer_state', {})
+        # A channel configuration shares the table, and saving the layout over it
+        # on quitting would lose its channels:
+        if 'channels' in save_data:
+            self.error_dialog(
+                f'{filename} is a channel configuration; use Load channel config.'
+            )
+            return
         if 'window_size' in save_data:
             self.ui.resize(*save_data['window_size'])
         if 'window_pos' in save_data:
