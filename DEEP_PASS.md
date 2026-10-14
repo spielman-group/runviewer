@@ -157,3 +157,43 @@ Not proposed:
 - The `try`/`except` around the start-up load (d7b6087): the file is the user's and can be malformed, and labscript-style rule 5 contains such errors at the boundary with `logger.exception`.
 - `if not selected_files: return` in `on_add_shot` (4db574e): a cancelled dialog returns None by `file_dialogs`' contract.
 - The splash stub itself: every suite app builds its `Splash` at module scope so the splash shows before the slow imports; this is the suite's settled pattern.
+
+Done (Ian approved R1 and R2):
+- R1, runviewer 7266381: channel configurations are saved under
+  `[runviewer_channels]`, and the old `[runviewer_state]` channels are still
+  read. The load refusal stays, now matching either table: saving the layout
+  rewrites the whole file, so a channel configuration loaded as the state file
+  would still lose its channels on quitting, whichever table holds them.
+- R2: runviewer c1df4df (`RunviewerServer(port, shots_queue)`; its test passes a
+  queue), runmanager dcf10bb (`test_send_to_runviewer.py` passes a queue, and no
+  longer leaves runviewer's module global rebound).
+
+## Row moving in the shared views (Ian's question)
+
+Should moving rows be a method of the shared views
+(`labscript_utils.qtwidgets.leftclick`), so that every app's buttons call it?
+
+| List | View | Model | Work after a move |
+| --- | --- | --- | --- |
+| runviewer channels | plain `QTreeView` (`main.ui`) | `QStandardItemModel` | `update_plot_positions()`; keeps the selection |
+| lyse routines | labscript-utils `TreeView` | `UneditableModel(QStandardItemModel)` | `reorder(order)`: sets a sort-index role and sorts the view, and reorders `self.routines`. The sort role is used only by `reorder`, and the view has no header sorting |
+| runmanager axes | labscript-utils `TreeView` | `QStandardItemModel` | `update_axes_indentation()`; keeps the selection (four near-copies of runviewer's old methods, about 85 lines) |
+
+All three models are `QStandardItemModel`s, so one take-and-insert move serves
+them all, and the extra work after it fits a signal that carries the order.
+
+Proposal: the view method.
+- labscript-utils: `TreeView` and `TableView` gain
+  `move_selected_rows(direction)`. It reads the selection, takes the new order
+  from `moved_row_order`, moves the rows, keeps them selected, and emits
+  `rowsMoved(order)`. A later drag and drop would emit the same signal, so the
+  apps would not change again. About +25 lines, in a small mixin beside
+  `LeftClickMixin`, which is about clicks.
+- runviewer: `channel_treeview` becomes the shared `TreeView` (a `.ui` class
+  change; it only adds the click signals). The buttons call the method, and
+  `rowsMoved` connects to `update_plot_positions`. `_move_channels` goes.
+- lyse: the buttons call the method; `rowsMoved` reorders `self.routines`. The
+  sort role and `sortByColumn` in `reorder` go.
+- runmanager: the four `on_axis_*_clicked` go; `rowsMoved` connects to
+  `update_axes_indentation`. About −80 lines.
+- `moved_row_order` stays, as the method's helper.
