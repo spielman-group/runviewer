@@ -253,3 +253,22 @@ Done (Ian approved T1-T3, C1 and D1): runviewer 16468fa. Only comment lines and 
 blank lines they left were removed from `__main__.py` (checked on the diff); a
 real shot still plots. The conf.py TODO elsewhere is handled by the coordinator
 (labscript-suite 1f355d8) and each repo's own pass.
+
+## Step 2.6: style
+
+Done, without a candidate round as the campaign asks: e514fcb (Qt imported by
+module, not with star imports; checked with pyflakes and an AST scan for
+undefined names), 9010709 (f-strings, plain classes, short comments and
+docstrings, banners on the three fork-written test files, unused imports and the
+unused `main_module` export dropped), 064eb85 (the review's list: plain test
+classes, `super()`, `on_mouse_moved`, `executor`, comments that restated code).
+The review found no change in behaviour; a real shot plots and rows move as
+before, and runviewer starts.
+
+Left as they are:
+- The "LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED." markers are
+  the suite's convention for finding the INI code when it goes (L5).
+- Qt enums are qualified but not scoped (`QtCore.Qt.Checked`): scoping all of
+  them is a large change for little gain.
+- `os.path` in the tests, until those files change for another reason.
+- `import qtutils.icons` registers the icons, so pyflakes' "unused" is expected.
