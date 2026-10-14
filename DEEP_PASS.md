@@ -56,6 +56,24 @@ panel. All **keep**; each fails alone when its rule is broken.
   use it, and the state-file test compares with `RunViewer.default_config_filename`.
   Its docstring's reason is stale. Delete it with the move above.
 
+## Done
+
+Ian approved the contract and A-F. Commits on `CodeHealth`:
+
+- Contract: the five naming tests are one test in labscript-utils
+  (`tests/test_labconfig.py`, 0f41853), and runviewer drops them and the unused
+  stand-in method (e51e735). Line 717 waits for step 2.
+- A, B: 862e2bd. C: f1ece9a. D: 1d59ba2. E: 8709a04.
+- F: labscript-utils `LabscriptGuiApplication.offer_to_save_changes` and
+  `geometry_keys` (ab74f34); runviewer 000c645; runmanager 3dcdfea; lyse
+  8f4eb9a.
+- From the review: Load configuration refuses a channel configuration, which
+  quitting would otherwise overwrite with the layout, and a bad state file no
+  longer stops runviewer starting.
+- Not done: runmanager's on-screen quit check, which would rewrite Ian's saved
+  `runmanager.toml`; its owner offers it to Ian. No test covers
+  `offer_to_save_changes`; the contract adds none.
+
 ## Shared GUI features runviewer does not use
 
 Ian's study for this pass: what runmanager and lyse take from the shared parents
