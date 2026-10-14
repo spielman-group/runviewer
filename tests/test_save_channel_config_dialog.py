@@ -29,10 +29,10 @@ from qtutils.qt.QtCore import Qt
 from fixtures import RunViewer
 
 
-class FakeChannelModel(object):
+class FakeChannelModel:
     """The rows ``on_save_channel_config`` reads, without a ``QApplication``."""
 
-    class Item(object):
+    class Item:
         def __init__(self, name, checked):
             self.name = name
             self.checked = checked
@@ -53,7 +53,7 @@ class FakeChannelModel(object):
         return self.items[row]
 
 
-class FakeRunViewer(object):
+class FakeRunViewer:
     """Enough of a RunViewer for ``on_save_channel_config`` to run."""
 
     on_save_channel_config = RunViewer.on_save_channel_config
@@ -68,7 +68,7 @@ class FakeRunViewer(object):
         )
 
 
-class FakeFileDialog(object):
+class FakeFileDialog:
     """Stands in for ``QFileDialog`` in ``file_dialogs``, leaving Qt's own untouched."""
 
     def __init__(self):
@@ -112,7 +112,7 @@ class SaveChannelConfigDialogTests(unittest.TestCase):
         self.assertTrue(
             suggested.lower().endswith('.toml'),
             'the panel keeps the extension it is given and replaces only the '
-            'stem, so the name offered has to end in .toml; got %r' % suggested,
+            f'stem, so the name offered has to end in .toml; got {suggested!r}',
         )
 
     def test_the_offered_filename_sits_in_the_default_config_folder(self):
@@ -125,10 +125,8 @@ class SaveChannelConfigDialogTests(unittest.TestCase):
         )
 
     def test_the_offered_filename_is_not_the_runviewer_state_file(self):
-        # The state file lives in this same folder, and *Save configuration*
-        # writes window geometry to it. A channel configuration written over it
-        # would take that geometry with it, so the panel must not offer its
-        # name as the one to accept.
+        # The state file shares this folder and holds the window layout; offering
+        # its name would invite overwriting it.
         suggested = self.suggested_path()
 
         self.assertNotEqual(

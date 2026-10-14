@@ -91,7 +91,6 @@ CHANNEL_MODEL__CHANNEL_INDEX = 0
 
 
 def format_time(input_sec):
-    # input_sec is in seconds
     if input_sec >= 1:
         return f"{input_sec:.3g}s"
     elif input_sec >= 1e-3:
@@ -145,7 +144,7 @@ class ScaleHandler:
 class ColourDelegate(QtWidgets.QItemDelegate):
 
     def __init__(self, view, *args, **kwargs):
-        QtWidgets.QItemDelegate.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._view = view
         self._colours = [QtCore.Qt.black, QtCore.Qt.red, QtCore.Qt.green, QtCore.Qt.blue, QtCore.Qt.cyan, QtCore.Qt.magenta, QtCore.Qt.yellow, QtCore.Qt.gray, QtCore.Qt.darkRed, QtCore.Qt.darkGreen, QtCore.Qt.darkBlue, QtCore.Qt.darkCyan, QtCore.Qt.darkMagenta, QtCore.Qt.darkYellow, QtCore.Qt.darkGray, QtCore.Qt.lightGray]
 
@@ -256,7 +255,7 @@ class RunViewer(LabscriptGuiApplication):
         time_axis_plot.getAxis('left').setTicks([])  # hide y ticks in the left & right side. only show time axis
         time_axis_plot.getAxis('right').setTicks([])
         time_axis_plot.setLabel('left', 'Slots')
-        time_axis_plot.scene().sigMouseMoved.connect(lambda pos: self.mouseMovedEvent(pos, time_axis_plot, "Slots"))
+        time_axis_plot.scene().sigMouseMoved.connect(lambda pos: self.on_mouse_moved(pos, time_axis_plot, "Slots"))
         time_axis_plot_item = time_axis_plot.plot([0, 1], [0, 0], pen=(255, 255, 255))
         self._time_axis_plot = (time_axis_plot, time_axis_plot_item)
 
@@ -275,7 +274,7 @@ class RunViewer(LabscriptGuiApplication):
         markers_plot.setLabel('left', 'Markers')
         markers_plot.setXLink('runviewer - time axis link')
         markers_plot.setMouseEnabled(y=False)
-        markers_plot.scene().sigMouseMoved.connect(lambda pos: self.mouseMovedEvent(pos, markers_plot, "Markers"))
+        markers_plot.scene().sigMouseMoved.connect(lambda pos: self.on_mouse_moved(pos, markers_plot, "Markers"))
         markers_plot_item = markers_plot.plot([])
         self._markers_plot = (markers_plot, markers_plot_item)
 
@@ -469,7 +468,7 @@ class RunViewer(LabscriptGuiApplication):
             last_time = t
         self.update_plots()
 
-    def mouseMovedEvent(self, position, ui, name):
+    def on_mouse_moved(self, position, ui, name):
         if self.ui.toggle_tooltip.isChecked():
             v = ui.scene().views()[0]
             viewP = v.mapFromScene(position)
@@ -835,7 +834,7 @@ class RunViewer(LabscriptGuiApplication):
 
         check_shutter = QtGui.QStandardItem()
         check_shutter.setCheckable(True)
-        check_shutter.setCheckState(QtCore.Qt.Unchecked)  # options are Qt.Checked OR Qt.Unchecked
+        check_shutter.setCheckState(QtCore.Qt.Unchecked)
         check_shutter.setEnabled(False)
         check_shutter.setToolTip("Toggle shutter markers")
         items.append(check_shutter)
@@ -843,7 +842,7 @@ class RunViewer(LabscriptGuiApplication):
         check_item = QtGui.QStandardItem(shot.path)
         check_item.setEditable(False)
         check_item.setCheckable(True)
-        check_item.setCheckState(QtCore.Qt.Unchecked)  # options are Qt.Checked OR Qt.Unchecked
+        check_item.setCheckState(QtCore.Qt.Unchecked)
         check_item.setData(shot)
         check_item.setToolTip(filepath)
         items.append(check_item)
@@ -1010,7 +1009,7 @@ class RunViewer(LabscriptGuiApplication):
         self.plot_widgets[channel].showAxis('bottom', True)
         self.plot_widgets[channel].setXLink('runviewer - time axis link')
         self.plot_widgets[channel].sigXRangeChanged.connect(self.on_x_range_changed)
-        self.plot_widgets[channel].scene().sigMouseMoved.connect(lambda pos: self.mouseMovedEvent(pos, self.plot_widgets[channel], channel))
+        self.plot_widgets[channel].scene().sigMouseMoved.connect(lambda pos: self.on_mouse_moved(pos, self.plot_widgets[channel], channel))
         self.ui.plot_layout.insertWidget(self.ui.plot_layout.count() - 1, self.plot_widgets[channel])
         self.shutter_lines[channel] = {}  # initialize Storage for shutter lines
         self.plot_items.setdefault(channel, {})
@@ -1077,7 +1076,7 @@ class RunViewer(LabscriptGuiApplication):
         return x_out, y_out
 
     def _resample_thread(self):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as executer:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as executor:
             while True:
                 if self._resample:
                     self._resample = False
@@ -1085,7 +1084,7 @@ class RunViewer(LabscriptGuiApplication):
 
                     results = []
                     for args in channel_data:
-                        results.append(executer.submit(self.__pool_resample, *args))
+                        results.append(executor.submit(self.__pool_resample, *args))
 
                     # wait for all inmain_later calls from threadpool to finish before we trigger a new resample
                     for future in results:
