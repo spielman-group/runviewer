@@ -248,3 +248,8 @@ branch deletions): runviewer 8493cc9 and, from the review, e2a8216.
 | D1 | `docs/source/usage.rst` does not mention the configuration actions this pass added (Load, Revert, Save, Save as; the layout saved on quit) | Add one sentence beside the channel-configuration sentence |
 
 Nothing else in `README.md`, `introduction.rst`, `usage.rst` or `AGENTS.md` is spent.
+
+Done (Ian approved T1-T3, C1 and D1): runviewer 16468fa. Only comment lines and the
+blank lines they left were removed from `__main__.py` (checked on the diff); a
+real shot still plots. The conf.py TODO elsewhere is handled by the coordinator
+(labscript-suite 1f355d8) and each repo's own pass.
