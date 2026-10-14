@@ -190,3 +190,36 @@ Done (Ian approved the view method): labscript-utils 5362568
 `TreeView` takes the mixin). The review found that the move cleared the view's
 current index, which broke runmanager's keyboard handling; labscript-utils keeps
 it. `moved_row_order` stays as the method's helper.
+
+## Step 2.4: dead code and leftovers
+
+Searched: every repo's `CodeHealth` with `git grep` for each name (hyde at its
+checkout), and labscript's history for the writers of runviewer's legacy shot
+attributes. "Upstream" means the code is in `master`.
+
+| # | What | Evidence | Origin | Proposal |
+| --- | --- | --- | --- | --- |
+| L1 (D3) | `__resample3`, `__resample4` (about 160 lines) | No caller in any repo; `resample` calls the C extension `_resample`, and the only mention is a commented-out call. Calling one directly raises on the removed `numpy.float` | upstream | delete, with the commented-out call |
+| L2 | `TempShot` | No reference in any repo; `TempShot(0)` raises in `Shot.__init__` | upstream | delete |
+| L3 | `Shot.clear_cache` (a `pass`), `Shot.delete_cache`, `Shot.__init__`'s `device_list` | No caller or reader in any repo | upstream | delete |
+| L4 | Legacy shot attributes: `_load_device`'s "backwards compat" read of `runviewer/shutter_times`, and `_load_markers`'s read of `runviewer/markers` | Nothing in any repo writes either; labscript wrote `runviewer/markers` only on a 2017 development branch (97b949b), renamed to `time_markers` before release (891825c) | upstream | delete both reads; old shots still open, without those markers |
+| L5 | Legacy INI app configs: the `*.ini` filter and "DEPRECATED CODE, WILL BE REMOVED" markers in `load_configuration` and `on_load_channel_config` | The conversion lives in labscript-utils' `load_appconfig`, shared by every app | fork (cda43b2) | drop runviewer's `*.ini` filters only when labscript-utils drops INI support suite-wide; until then, keep |
+| L6 | `group_channel` and `delete_group` buttons, always disabled, and `# TODO: Also update entries in groups` | Never enabled; no handler | upstream | delete both buttons from `main.ui` and their two icon lines |
+| L7 | `on_remove_shots`' `colour_item` and `del shot`; `update_plot_positions`' `layout_items`; `resample`'s `resampling = True` and its unreachable `else` | Assigned and never used, or a branch that cannot run | upstream | delete |
+| L8 | `__pool_resample`'s `except Exception: pass`, with a commented-out line | Swallows every resampling error | upstream | replace with `logger.exception(...)`, which is labscript-style rule 5 |
+| L9 | The `shots_to_process_queue` and `app` globals, which `RunViewer._process_shots` and `Shot.scaled_times` read | Defined only under `if __name__ == '__main__'` (mapping list item 19); R2 removed the server's use | upstream | step 3 of a later round, not dead code: leave |
+
+`update_plot_positions` also removes layout items with `takeAt(i)` while the
+count shrinks, so it skips every other item (mapping list item 15). That is a
+suspected bug, not dead code. If it is confirmed by running it, it goes in
+`KNOWN_ISSUES.md` or is fixed.
+
+### Branches
+
+| Branch | Where | State | Proposal |
+| --- | --- | --- | --- |
+| `ServerInterfaces` | local and origin | Fully in `Development`. CODEX keeps it live for a paused rule-13 test cleanup, which this pass's contract step has now done for runviewer | delete, locally and on origin |
+| `RunmanagerTOML` | origin | CODEX: spent, `Production` has a fuller version. Its commits are not in `Development`, but its content is superseded | delete on origin |
+| `maintenance/3.0.x` | origin | Upstream's own maintenance branch (the same tip on `upstream`), copied to our fork; never ours | delete on origin |
+| `spielman_retired/share` | local and origin | Retired, reference only | keep |
+| `master`, `Production`, `Development`, `CodeHealth` | | tiers and the campaign | keep |
