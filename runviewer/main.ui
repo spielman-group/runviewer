@@ -662,6 +662,11 @@ QToolButton:hover:checked {
     </property>
     <addaction name="actionOpen_Shot"/>
     <addaction name="separator"/>
+    <addaction name="actionLoad_configuration"/>
+    <addaction name="actionRevert_configuration"/>
+    <addaction name="actionSave_configuration"/>
+    <addaction name="actionSave_configuration_as"/>
+    <addaction name="separator"/>
     <addaction name="actionLoad_channel_config"/>
     <addaction name="actionSave_channel_config"/>
     <addaction name="separator"/>
@@ -674,14 +679,46 @@ QToolButton:hover:checked {
     <string>Open Shot</string>
    </property>
   </action>
-  <action name="actionSave_runviewer_state">
+  <action name="actionLoad_configuration">
+   <property name="icon">
+    <iconset resource="../../Anaconda/Lib/site-packages/qtutils/icons/icons.qrc">
+     <normaloff>:/qtutils/fugue/folder-open.png</normaloff>:/qtutils/fugue/folder-open.png</iconset>
+   </property>
    <property name="text">
-    <string>Save runviewer state</string>
+    <string>Load configuration</string>
    </property>
   </action>
-  <action name="actionLoad_runviewer_state">
+  <action name="actionRevert_configuration">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../Anaconda/Lib/site-packages/qtutils/icons/icons.qrc">
+     <normaloff>:/qtutils/fugue/arrow-curve-180-left.png</normaloff>:/qtutils/fugue/arrow-curve-180-left.png</iconset>
+   </property>
    <property name="text">
-    <string>Load runviewer state</string>
+    <string>Revert configuration</string>
+   </property>
+  </action>
+  <action name="actionSave_configuration">
+   <property name="icon">
+    <iconset resource="../../Anaconda/Lib/site-packages/qtutils/icons/icons.qrc">
+     <normaloff>:/qtutils/fugue/disk.png</normaloff>:/qtutils/fugue/disk.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save configuration</string>
+   </property>
+  </action>
+  <action name="actionSave_configuration_as">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../../Anaconda/Lib/site-packages/qtutils/icons/icons.qrc">
+     <normaloff>:/qtutils/fugue/disk--plus.png</normaloff>:/qtutils/fugue/disk--plus.png</iconset>
+   </property>
+   <property name="text">
+    <string>Save as...</string>
    </property>
   </action>
   <action name="actionQuit">

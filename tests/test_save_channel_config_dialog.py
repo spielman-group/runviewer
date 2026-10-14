@@ -143,7 +143,7 @@ class SaveChannelConfigDialogTests(unittest.TestCase):
         )
 
     def test_the_offered_filename_is_not_the_runviewer_state_file(self):
-        # The state file lives in this same folder, and *Save runviewer state*
+        # The state file lives in this same folder, and *Save configuration*
         # writes window geometry to it. A channel configuration written over it
         # would take that geometry with it, so the panel must not offer its
         # name as the one to accept.

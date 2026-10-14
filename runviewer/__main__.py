@@ -69,12 +69,14 @@ from labscript_utils import device_registry, ensure_str
 
 from labscript_utils.labconfig import (
     LabConfig,
-    LabscriptApplication,
     appconfig_path_with_suffix,
     save_appconfig,
     load_appconfig,
 )
-from labscript_utils.qtwidgets.application import exec_qapplication
+from labscript_utils.qtwidgets.application import (
+    LabscriptGuiApplication,
+    exec_qapplication,
+)
 from labscript_utils.ls_zprocess import ZMQServer, ProcessTree
 import labscript_utils.qtwidgets.file_dialogs as file_dialogs
 process_tree = ProcessTree.instance()
@@ -203,7 +205,7 @@ class ColourDelegate(QItemDelegate):
         editor.setGeometry(option.rect)
 
 
-class RunViewer(LabscriptApplication):
+class RunViewer(LabscriptGuiApplication):
     app_name = 'runviewer'
     default_config_filename = 'runviewer.toml'
 
@@ -298,8 +300,6 @@ class RunViewer(LabscriptApplication):
 
         self.ui.actionOpen_Shot.setIcon(QIcon(':/qtutils/fugue/plus'))
         self.ui.actionQuit.setIcon(QIcon(':/qtutils/fugue/cross-button'))
-        self.ui.actionLoad_runviewer_state.setIcon(QIcon(':/qtutils/fugue/folder-open'))
-        self.ui.actionSave_runviewer_state.setIcon(QIcon(':/qtutils/fugue/disk'))
         self.ui.actionLoad_channel_config.setIcon(QIcon(':/qtutils/fugue/folder-open'))
         self.ui.actionSave_channel_config.setIcon(QIcon(':/qtutils/fugue/disk'))
 
@@ -325,12 +325,10 @@ class RunViewer(LabscriptApplication):
 
         self.ui.actionOpen_Shot.triggered.connect(self.on_add_shot)
         self.ui.actionQuit.triggered.connect(self.ui.close)
-        self.ui.actionLoad_runviewer_state.triggered.connect(
-            self.on_load_runviewer_state
-        )
-        self.ui.actionSave_runviewer_state.triggered.connect(
-            self.on_save_runviewer_state
-        )
+        self.ui.actionLoad_configuration.triggered.connect(self.on_load_configuration_triggered)
+        self.ui.actionRevert_configuration.triggered.connect(self.on_revert_configuration_triggered)
+        self.ui.actionSave_configuration.triggered.connect(self.on_save_configuration_triggered)
+        self.ui.actionSave_configuration_as.triggered.connect(self.on_save_configuration_as_triggered)
         self.ui.actionLoad_channel_config.triggered.connect(self.on_load_channel_config)
         self.ui.actionSave_channel_config.triggered.connect(self.on_save_channel_config)
 
@@ -397,28 +395,10 @@ class RunViewer(LabscriptApplication):
             self.ui.splitter_2.setSizes(save_data['splitter_2'])
         self.last_save_config_file = save_target
         self.last_save_data = self.get_save_data()
+        self.ui.actionSave_configuration.setText(f'Save configuration {save_target}')
+        self.ui.actionSave_configuration_as.setEnabled(True)
+        self.ui.actionRevert_configuration.setEnabled(True)
         self.set_config_window_title(save_target)
-
-    def on_load_runviewer_state(self):
-        # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
-        config_file = file_dialogs.open_file(
-            self.ui,
-            'Select file to load',
-            self.last_save_config_file or self.get_default_config_file(),
-            'Config files (*.toml *.ini)',
-        )
-        if config_file:
-            self.load_configuration(config_file)
-
-    def on_save_runviewer_state(self):
-        save_file = file_dialogs.save_file(
-            self.ui,
-            'Select file to save current runviewer state',
-            self.last_save_config_file or self.get_default_config_file(),
-            'Config files (*.toml)',
-        )
-        if save_file:
-            self.save_configuration(save_file)
 
     def _update_markers(self, index):
         for line, plot in self.all_marker_items.items():
