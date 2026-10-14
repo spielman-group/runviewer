@@ -46,9 +46,7 @@ import labscript_utils.h5_lock
 import h5py
 
 # No splash update for Qt - the splash screen already imported it
-from qtutils.qt.QtCore import *
-from qtutils.qt.QtGui import *
-from qtutils.qt.QtWidgets import *
+from qtutils.qt import QtCore, QtGui, QtWidgets
 
 splash.update_text('importing pyqtgraph')
 import pyqtgraph as pg
@@ -61,7 +59,7 @@ from scipy import interpolate
 pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
 
-from qtutils import *
+from qtutils import UiLoader, inmain_decorator, inmain_later
 import qtutils.icons
 splash.update_text('importing labscript suite modules')
 from labscript_utils.connections import ConnectionTable
@@ -154,12 +152,12 @@ class ScaleHandler():
         self.scaled_stop_time = self.get_scaled_time(self.org_stop_time)
 
 
-class ColourDelegate(QItemDelegate):
+class ColourDelegate(QtWidgets.QItemDelegate):
 
     def __init__(self, view, *args, **kwargs):
-        QItemDelegate.__init__(self, *args, **kwargs)
+        QtWidgets.QItemDelegate.__init__(self, *args, **kwargs)
         self._view = view
-        self._colours = [Qt.black, Qt.red, Qt.green, Qt.blue, Qt.cyan, Qt.magenta, Qt.yellow, Qt.gray, Qt.darkRed, Qt.darkGreen, Qt.darkBlue, Qt.darkCyan, Qt.darkMagenta, Qt.darkYellow, Qt.darkGray, Qt.lightGray]
+        self._colours = [QtCore.Qt.black, QtCore.Qt.red, QtCore.Qt.green, QtCore.Qt.blue, QtCore.Qt.cyan, QtCore.Qt.magenta, QtCore.Qt.yellow, QtCore.Qt.gray, QtCore.Qt.darkRed, QtCore.Qt.darkGreen, QtCore.Qt.darkBlue, QtCore.Qt.darkCyan, QtCore.Qt.darkMagenta, QtCore.Qt.darkYellow, QtCore.Qt.darkGray, QtCore.Qt.lightGray]
 
         self._current_colour_index = 0
 
@@ -171,20 +169,20 @@ class ColourDelegate(QItemDelegate):
         return colour
 
     def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
+        editor = QtWidgets.QComboBox(parent)
         for colour in self._colours:
-            pixmap = QPixmap(20, 20)
+            pixmap = QtGui.QPixmap(20, 20)
             pixmap.fill(colour)
-            editor.addItem(QIcon(pixmap), '', colour)
+            editor.addItem(QtGui.QIcon(pixmap), '', colour)
 
         editor.activated.connect(lambda index, editor=editor: self._view.commitData(editor))
-        editor.activated.connect(lambda index, editor=editor: self._view.closeEditor(editor, QAbstractItemDelegate.NoHint))
-        QTimer.singleShot(10, editor.showPopup)
+        editor.activated.connect(lambda index, editor=editor: self._view.closeEditor(editor, QtWidgets.QAbstractItemDelegate.NoHint))
+        QtCore.QTimer.singleShot(10, editor.showPopup)
 
         return editor
 
     def setEditorData(self, editor, index):
-        value = index.model().data(index, Qt.UserRole)
+        value = index.model().data(index, QtCore.Qt.UserRole)
         for i in range(editor.count()):
             if editor.itemData(i) == value():
                 editor.setCurrentIndex(i)
@@ -197,14 +195,14 @@ class ColourDelegate(QItemDelegate):
         # Note, all data being written to the model must be read out of the editor PRIOR to calling model.setData()
         #       This is because a call to model.setData() triggers setEditorData(), which messes up subsequent
         #       calls to the editor to determine the currently selected item/data
-        model.setData(index, icon, Qt.DecorationRole)
-        model.setData(index, lambda clist=self._colours, colour=colour: int_to_enum(clist, colour), Qt.UserRole)
+        model.setData(index, icon, QtCore.Qt.DecorationRole)
+        model.setData(index, lambda clist=self._colours, colour=colour: int_to_enum(clist, colour), QtCore.Qt.UserRole)
 
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect)
 
 
-class RunviewerMainWindow(ThemedWindow, QMainWindow):
+class RunviewerMainWindow(ThemedWindow, QtWidgets.QMainWindow):
     def __init__(self, app):
         super().__init__()
         self.app = app
@@ -232,7 +230,7 @@ class RunViewer(LabscriptGuiApplication):
         self.init_config_window_title()
 
         # setup shot treeview model
-        self.shot_model = QStandardItemModel()
+        self.shot_model = QtGui.QStandardItemModel()
         self.shot_model.setHorizontalHeaderLabels(['colour', 'shutters', 'path'])
         self.ui.shot_treeview.setModel(self.shot_model)
         self.ui.shot_treeview.resizeColumnToContents(1)
@@ -241,7 +239,7 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.shot_treeview.setItemDelegateForColumn(0, self.shot_colour_delegate)
 
         # setup channel treeview model
-        self.channel_model = QStandardItemModel()
+        self.channel_model = QtGui.QStandardItemModel()
         self.channel_model.setHorizontalHeaderLabels(['channel'])
         self.ui.channel_treeview.setModel(self.channel_model)
         self.channel_model.itemChanged.connect(self.update_plots)
@@ -295,27 +293,27 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.plot_layout.addWidget(time_axis_plot)
 
         # add some icons
-        self.ui.add_shot.setIcon(QIcon(':/qtutils/fugue/plus'))
-        self.ui.remove_shots.setIcon(QIcon(':/qtutils/fugue/minus'))
-        self.ui.enable_selected_shots.setIcon(QIcon(':/qtutils/fugue/ui-check-box'))
-        self.ui.disable_selected_shots.setIcon(QIcon(':/qtutils/fugue/ui-check-box-uncheck'))
-        self.ui.channel_move_to_top.setIcon(QIcon(':/qtutils/fugue/arrow-stop-090'))
-        self.ui.channel_move_up.setIcon(QIcon(':/qtutils/fugue/arrow-090'))
-        self.ui.channel_move_down.setIcon(QIcon(':/qtutils/fugue/arrow-270'))
-        self.ui.channel_move_to_bottom.setIcon(QIcon(':/qtutils/fugue/arrow-stop-270'))
-        self.ui.reset_x_axis.setIcon(QIcon(':/qtutils/fugue/layer-resize-replicate'))
-        self.ui.reset_y_axis.setIcon(QIcon(':/qtutils/fugue/layer-resize-replicate-vertical'))
-        self.ui.toggle_tooltip.setIcon(QIcon(':/qtutils/fugue/ui-tooltip-balloon'))
-        self.ui.linear_time.setIcon(QIcon(':/qtutils/fugue/clock-history'))
-        self.ui.equal_space_time.setIcon(QIcon(':/qtutils/fugue/border-vertical-all'))
+        self.ui.add_shot.setIcon(QtGui.QIcon(':/qtutils/fugue/plus'))
+        self.ui.remove_shots.setIcon(QtGui.QIcon(':/qtutils/fugue/minus'))
+        self.ui.enable_selected_shots.setIcon(QtGui.QIcon(':/qtutils/fugue/ui-check-box'))
+        self.ui.disable_selected_shots.setIcon(QtGui.QIcon(':/qtutils/fugue/ui-check-box-uncheck'))
+        self.ui.channel_move_to_top.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-stop-090'))
+        self.ui.channel_move_up.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-090'))
+        self.ui.channel_move_down.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-270'))
+        self.ui.channel_move_to_bottom.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-stop-270'))
+        self.ui.reset_x_axis.setIcon(QtGui.QIcon(':/qtutils/fugue/layer-resize-replicate'))
+        self.ui.reset_y_axis.setIcon(QtGui.QIcon(':/qtutils/fugue/layer-resize-replicate-vertical'))
+        self.ui.toggle_tooltip.setIcon(QtGui.QIcon(':/qtutils/fugue/ui-tooltip-balloon'))
+        self.ui.linear_time.setIcon(QtGui.QIcon(':/qtutils/fugue/clock-history'))
+        self.ui.equal_space_time.setIcon(QtGui.QIcon(':/qtutils/fugue/border-vertical-all'))
 
         self.ui.linear_time.setEnabled(False)
         self.ui.equal_space_time.setEnabled(False)
 
-        self.ui.actionOpen_Shot.setIcon(QIcon(':/qtutils/fugue/plus'))
-        self.ui.actionQuit.setIcon(QIcon(':/qtutils/fugue/cross-button'))
-        self.ui.actionLoad_channel_config.setIcon(QIcon(':/qtutils/fugue/folder-open'))
-        self.ui.actionSave_channel_config.setIcon(QIcon(':/qtutils/fugue/disk'))
+        self.ui.actionOpen_Shot.setIcon(QtGui.QIcon(':/qtutils/fugue/plus'))
+        self.ui.actionQuit.setIcon(QtGui.QIcon(':/qtutils/fugue/cross-button'))
+        self.ui.actionLoad_channel_config.setIcon(QtGui.QIcon(':/qtutils/fugue/folder-open'))
+        self.ui.actionSave_channel_config.setIcon(QtGui.QIcon(':/qtutils/fugue/disk'))
 
         # connect signals
         self.ui.reset_x_axis.clicked.connect(self.on_x_axis_reset)
@@ -350,8 +348,8 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.actionSave_channel_config.triggered.connect(self.on_save_channel_config)
 
         # Keyboard shortcuts:
-        QShortcut('Del', self.ui.shot_treeview, lambda: self.on_remove_shots(confirm=True))
-        QShortcut('Shift+Del', self.ui.shot_treeview, lambda: self.on_remove_shots(confirm=False))
+        QtGui.QShortcut('Del', self.ui.shot_treeview, lambda: self.on_remove_shots(confirm=True))
+        QtGui.QShortcut('Shift+Del', self.ui.shot_treeview, lambda: self.on_remove_shots(confirm=False))
 
         splash.update_text('done')
         self.ui.show()
@@ -464,19 +462,19 @@ class RunViewer(LabscriptGuiApplication):
             if (r, g, b) == (-1, -1, -1):
                 # Default colour, black:
                 r, g, b = (0, 0, 0)
-            color = QColor(r, g, b)
+            color = QtGui.QColor(r, g, b)
             label = ensure_str(m['label'])
             if i == 0:
-                line = self._markers_plot[0].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=Qt.DashLine), label=label, labelOpts= {"color": color, "fill": QColor(255, 255, 255, 255), "rotateAxis":(1, 0), "anchors": [(0.5, 0),(0.5, 0)]}, movable=False )
+                line = self._markers_plot[0].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=QtCore.Qt.DashLine), label=label, labelOpts= {"color": color, "fill": QtGui.QColor(255, 255, 255, 255), "rotateAxis":(1, 0), "anchors": [(0.5, 0),(0.5, 0)]}, movable=False )
             else:
-                line = self._markers_plot[0].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=Qt.DashLine), label=label, labelOpts= {"color": color, "fill": QColor(255, 255, 255, 255), "rotateAxis":(1, 0), "anchors": [(0.5, 0),(0.5, 0)]}, movable=True )
+                line = self._markers_plot[0].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=QtCore.Qt.DashLine), label=label, labelOpts= {"color": color, "fill": QtGui.QColor(255, 255, 255, 255), "rotateAxis":(1, 0), "anchors": [(0.5, 0),(0.5, 0)]}, movable=True )
                 line.setBounds([last_time+1e-9 if last_time !=0 else last_time ,None])
                 line.sigPositionChanged.connect(self._marker_moving)
                 line.sigPositionChangeFinished.connect(self._marker_moved)
             self.movable_marker_items[line] = self._markers_plot[0]
             self.marker_times_unscaled[line] = unscaled_t
 
-            line = self._time_axis_plot[0].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=Qt.DashLine), label=format_time(delta_t), labelOpts= {"color": color, "fill": QColor(255, 255, 255, 255), "rotateAxis":(1, 0), "anchors": [(0.5, 0),(0.5, 0)]}, movable=False )
+            line = self._time_axis_plot[0].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=QtCore.Qt.DashLine), label=format_time(delta_t), labelOpts= {"color": color, "fill": QtGui.QColor(255, 255, 255, 255), "rotateAxis":(1, 0), "anchors": [(0.5, 0),(0.5, 0)]}, movable=False )
             self.all_marker_items[line] = self._time_axis_plot[0]
             last_time = t
         self.update_plots()
@@ -486,7 +484,7 @@ class RunViewer(LabscriptGuiApplication):
             v = ui.scene().views()[0]
             viewP = v.mapFromScene(position)
             glob_pos = ui.mapToGlobal(viewP)  # convert to Screen x
-            glob_zero = ui.mapToGlobal(QPoint(0, 0))
+            glob_zero = ui.mapToGlobal(QtCore.QPoint(0, 0))
             self._global_start_x = glob_zero.x()
             self._global_start_y = glob_zero.y()
             self._global_width = ui.width()
@@ -501,7 +499,7 @@ class RunViewer(LabscriptGuiApplication):
                 else:
                     unscaled_t = scaled_t
                 if unscaled_t is not None:
-                    pos = QPoint(glob_pos.x(), glob_pos.y())
+                    pos = QtCore.QPoint(glob_pos.x(), glob_pos.y())
                     plot_data = ui.plotItem.listDataItems()[0].getData()
                     if plot_data[0] is not None and scaled_t is not None:
                         nearest_index = numpy.abs(plot_data[0] - scaled_t).argmin() - 1
@@ -509,7 +507,7 @@ class RunViewer(LabscriptGuiApplication):
                     else:
                         y_val = '-'
                     text = "Plot: {} \nTime: {:.9f}s\nValue: {}".format(name, unscaled_t, y_val)
-                    QToolTip.showText(pos, text)
+                    QtWidgets.QToolTip.showText(pos, text)
 
     def _reset_linear_time(self):
         self.scale_time = False
@@ -678,16 +676,16 @@ class RunViewer(LabscriptGuiApplication):
                 check_items = self.channel_model.findItems(channel)
                 if len(check_items) == 0:
                     items = []
-                    check_item = QStandardItem(channel)
+                    check_item = QtGui.QStandardItem(channel)
                     check_item.setEditable(False)
                     check_item.setCheckable(True)
                     items.append(check_item)
-                    check_item.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+                    check_item.setCheckState(QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked)
                     check_item.setEnabled(False)
                     self.channel_model.insertRow(row, items)
                 else:
                     check_item = check_items[0]
-                    check_item.setCheckState(Qt.Checked if checked else Qt.Unchecked)
+                    check_item.setCheckState(QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked)
                     self.channel_model.takeRow(check_item.row())
                     self.channel_model.insertRow(row, check_item)
 
@@ -711,7 +709,7 @@ class RunViewer(LabscriptGuiApplication):
             channels = []
             for row in range(self.channel_model.rowCount()):
                 item = self.channel_model.item(row)
-                channels.append((item.text(), item.checkState() == Qt.Checked))
+                channels.append((item.text(), item.checkState() == QtCore.Qt.Checked))
 
             save_appconfig(save_file, {'runviewer_channels': {'channels': channels}})
 
@@ -778,8 +776,8 @@ class RunViewer(LabscriptGuiApplication):
             shutter_item = self.shot_model.item(row, SHOT_MODEL__SHUTTER_INDEX)
             shot = item.data()
             # unselect shot
-            item.setCheckState(Qt.Unchecked)
-            shutter_item.setCheckState(Qt.Unchecked)
+            item.setCheckState(QtCore.Qt.Unchecked)
+            shutter_item.setCheckState(QtCore.Qt.Unchecked)
             # remove shot from markers list
             shot_combobox_index = self.ui.markers_comboBox.findText(os.path.basename(shot.path))
             self.ui.markers_comboBox.removeItem(shot_combobox_index)
@@ -796,18 +794,18 @@ class RunViewer(LabscriptGuiApplication):
             check_shutter = self.shot_model.item(row, SHOT_MODEL__SHUTTER_INDEX)
 
             if checked:
-                colour = colour_item.data(Qt.UserRole)
+                colour = colour_item.data(QtCore.Qt.UserRole)
                 if colour is not None:
                     colour = colour()
                 else:
                     colour = self.shot_colour_delegate.get_next_colour()
 
                 colour_item.setEditable(True)
-                pixmap = QPixmap(20, 20)
+                pixmap = QtGui.QPixmap(20, 20)
                 pixmap.fill(colour)
-                icon = QIcon(pixmap)
-                colour_item.setData(lambda clist=self.shot_colour_delegate._colours, colour=colour: int_to_enum(clist, colour), Qt.UserRole)
-                colour_item.setData(icon, Qt.DecorationRole)
+                icon = QtGui.QIcon(pixmap)
+                colour_item.setData(lambda clist=self.shot_colour_delegate._colours, colour=colour: int_to_enum(clist, colour), QtCore.Qt.UserRole)
+                colour_item.setData(icon, QtCore.Qt.DecorationRole)
                 shot_combobox_index = self.ui.markers_comboBox.findText(os.path.basename(item.data().path))
                 self.ui.markers_comboBox.model().item(shot_combobox_index).setEnabled(True)
                 if self.ui.markers_comboBox.currentIndex() == 0:
@@ -836,8 +834,8 @@ class RunViewer(LabscriptGuiApplication):
             for channel in self.plot_items.keys():
                 for shot in self.plot_items[channel]:
                     if shot == current_shot:
-                        colour = item.data(Qt.UserRole)
-                        self.plot_items[channel][shot].setPen(pg.mkPen(QColor(colour()), width=2))
+                        colour = item.data(QtCore.Qt.UserRole)
+                        self.plot_items[channel][shot].setPen(pg.mkPen(QtGui.QColor(colour()), width=2))
         elif self.shot_model.indexFromItem(item).column() == SHOT_MODEL__SHUTTER_INDEX:
             current_shot = self.shot_model.item(self.shot_model.indexFromItem(item).row(), SHOT_MODEL__CHECKBOX_INDEX).data()
             self.on_toggle_shutter(item.checkState(), current_shot)
@@ -849,22 +847,22 @@ class RunViewer(LabscriptGuiApplication):
         # add shot to shot list
         # Create Items
         items = []
-        colour_item = QStandardItem('')
+        colour_item = QtGui.QStandardItem('')
         colour_item.setEditable(False)
         colour_item.setToolTip('Double-click to change colour')
         items.append(colour_item)
 
-        check_shutter = QStandardItem()
+        check_shutter = QtGui.QStandardItem()
         check_shutter.setCheckable(True)
-        check_shutter.setCheckState(Qt.Unchecked)  # options are Qt.Checked OR Qt.Unchecked
+        check_shutter.setCheckState(QtCore.Qt.Unchecked)  # options are Qt.Checked OR Qt.Unchecked
         check_shutter.setEnabled(False)
         check_shutter.setToolTip("Toggle shutter markers")
         items.append(check_shutter)
 
-        check_item = QStandardItem(shot.path)
+        check_item = QtGui.QStandardItem(shot.path)
         check_item.setEditable(False)
         check_item.setCheckable(True)
-        check_item.setCheckState(Qt.Unchecked)  # options are Qt.Checked OR Qt.Unchecked
+        check_item.setCheckState(QtCore.Qt.Unchecked)  # options are Qt.Checked OR Qt.Unchecked
         check_item.setData(shot)
         check_item.setToolTip(filepath)
         items.append(check_item)
@@ -880,9 +878,9 @@ class RunViewer(LabscriptGuiApplication):
             item = self.shot_model.item(i, SHOT_MODEL__CHECKBOX_INDEX)
             colour_item = self.shot_model.item(i, SHOT_MODEL__COLOUR_INDEX)
             shutter_item = self.shot_model.item(i, SHOT_MODEL__SHUTTER_INDEX)
-            if item.checkState() == Qt.Checked:
+            if item.checkState() == QtCore.Qt.Checked:
                 shot = item.data()
-                colour_item_data = colour_item.data(Qt.UserRole)
+                colour_item_data = colour_item.data(QtCore.Qt.UserRole)
                 ticked_shots[shot] = (colour_item_data(), shutter_item.checkState())
         return ticked_shots
 
@@ -918,10 +916,10 @@ class RunViewer(LabscriptGuiApplication):
         channels_to_add = channels_set.difference(treeview_channels)
         for channel in sorted(channels_to_add):
             items = []
-            check_item = QStandardItem(channel)
+            check_item = QtGui.QStandardItem(channel)
             check_item.setEditable(False)
             check_item.setCheckable(True)
-            check_item.setCheckState(Qt.Unchecked)
+            check_item.setCheckState(QtCore.Qt.Unchecked)
             items.append(check_item)
             self.channel_model.appendRow(items)
 
@@ -971,7 +969,7 @@ class RunViewer(LabscriptGuiApplication):
         for i in range(self.channel_model.rowCount()):
             check_item = self.channel_model.item(i, CHANNEL_MODEL__CHECKBOX_INDEX)
             channel = str(check_item.text())
-            if check_item.checkState() == Qt.Checked and check_item.isEnabled():
+            if check_item.checkState() == QtCore.Qt.Checked and check_item.isEnabled():
                 # we want to show this plot
                 # does a plot already exist? If yes, show it
                 if channel in self.plot_widgets:
@@ -997,7 +995,7 @@ class RunViewer(LabscriptGuiApplication):
                     for shot, (colour, shutters_checked) in ticked_shots.items():
                         if shot not in self.plot_items[channel]:
                             # Add empty plot as it the custom resampling we do will happen quicker if we don't attempt to first plot all of the data
-                            plot_item = self.plot_widgets[channel].plot([0, 0], [0], pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
+                            plot_item = self.plot_widgets[channel].plot([0, 0], [0], pen=pg.mkPen(QtGui.QColor(colour), width=2), stepMode='center')
                             self.plot_items[channel][shot] = plot_item
 
                         # Add Shutter Markers of newly ticked Shots
@@ -1005,10 +1003,10 @@ class RunViewer(LabscriptGuiApplication):
 
                     for t, m in self.all_markers.items():
                         color = m['color']
-                        color = QColor(color[0], color[1], color[2])
+                        color = QtGui.QColor(color[0], color[1], color[2])
                         if self.scale_time and self.scalehandler is not None:
                             t = self.scalehandler.get_scaled_time(t)
-                        line = self.plot_widgets[channel].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=Qt.DashLine))
+                        line = self.plot_widgets[channel].addLine(x=t, pen=pg.mkPen(color=color, width=1.5, style=QtCore.Qt.DashLine))
                         self.all_marker_items[line] = self.plot_widgets[channel]
 
                 # If no, create one
@@ -1041,7 +1039,7 @@ class RunViewer(LabscriptGuiApplication):
         for shot, (colour, shutters_checked) in ticked_shots.items():
             if channel in shot.traces:
                 # Add empty plot as it the custom resampling we do will happen quicker if we don't attempt to first plot all of the data
-                plot_item = self.plot_widgets[channel].plot([0, 0], [0], pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
+                plot_item = self.plot_widgets[channel].plot([0, 0], [0], pen=pg.mkPen(QtGui.QColor(colour), width=2), stepMode='center')
                 self.plot_items[channel][shot] = plot_item
 
                 if len(shot.traces[channel]) == 3:
@@ -1060,18 +1058,18 @@ class RunViewer(LabscriptGuiApplication):
         if shot not in self.shutter_lines[channel] and channel in shot.shutter_times:
             self.shutter_lines[channel][shot] = [[], []]
 
-            open_color = QColor(0, 255, 0)
-            close_color = QColor(255, 0, 0)
+            open_color = QtGui.QColor(0, 255, 0)
+            close_color = QtGui.QColor(255, 0, 0)
 
             for t, val in shot.shutter_times[channel].items():
                 scaled_t = t
                 if val:  # val != 0, shutter open
-                    line = self.plot_widgets[channel].addLine(x=scaled_t, pen=pg.mkPen(color=open_color, width=4., style=Qt.DotLine))
+                    line = self.plot_widgets[channel].addLine(x=scaled_t, pen=pg.mkPen(color=open_color, width=4., style=QtCore.Qt.DotLine))
                     self.shutter_lines[channel][shot][1].append(line)
                     if not shutters_checked:
                         line.hide()
                 else:  # else shutter close
-                    line = self.plot_widgets[channel].addLine(x=scaled_t, pen=pg.mkPen(color=close_color, width=4., style=Qt.DotLine))
+                    line = self.plot_widgets[channel].addLine(x=scaled_t, pen=pg.mkPen(color=close_color, width=4., style=QtCore.Qt.DotLine))
                     self.shutter_lines[channel][shot][0].append(line)
                     if not shutters_checked:
                         line.hide()
@@ -1144,17 +1142,17 @@ class RunViewer(LabscriptGuiApplication):
                 xnew, ynew = self.resample(shot.scaled_times(channel), shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
             else:
                 xnew, ynew = self.resample(shot.traces[channel][0], shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
-            return inmain_later(plot_item.setData, xnew, ynew, pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
+            return inmain_later(plot_item.setData, xnew, ynew, pen=pg.mkPen(QtGui.QColor(colour), width=2), stepMode='center')
         except Exception:
             logger.exception(f'Could not resample {channel}')
 
     @inmain_decorator(wait_for_return=True)
     def channel_checked_and_enabled(self, channel):
         index = self.channel_model.index(0, CHANNEL_MODEL__CHANNEL_INDEX)
-        indexes = self.channel_model.match(index, Qt.DisplayRole, channel, 1, Qt.MatchExactly)
+        indexes = self.channel_model.match(index, QtCore.Qt.DisplayRole, channel, 1, QtCore.Qt.MatchExactly)
         if len(indexes) == 1:
             check_item = self.channel_model.itemFromIndex(indexes[0])
-            if check_item.checkState() == Qt.Checked and check_item.isEnabled():
+            if check_item.checkState() == QtCore.Qt.Checked and check_item.isEnabled():
                 return True
         return False
 
@@ -1183,10 +1181,10 @@ class RunViewer(LabscriptGuiApplication):
             plot_widget.enableAutoRange(axis=pg.ViewBox.YAxis)
 
     def _enable_selected_shots(self):
-        self.update_ticks_of_selected_shots(Qt.Checked)
+        self.update_ticks_of_selected_shots(QtCore.Qt.Checked)
 
     def _disable_selected_shots(self):
-        self.update_ticks_of_selected_shots(Qt.Unchecked)
+        self.update_ticks_of_selected_shots(QtCore.Qt.Unchecked)
 
     def update_ticks_of_selected_shots(self, state):
         # Get the selection model from the treeview
@@ -1205,7 +1203,7 @@ class RunViewer(LabscriptGuiApplication):
             channel = str(check_item.text())
             if channel in self.plot_widgets:
                 self.ui.plot_layout.addWidget(self.plot_widgets[channel])
-                if check_item.checkState() == Qt.Checked and check_item.isEnabled():
+                if check_item.checkState() == QtCore.Qt.Checked and check_item.isEnabled():
                     self.plot_widgets[channel].show()
                 else:
                     self.plot_widgets[channel].hide()

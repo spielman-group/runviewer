@@ -27,11 +27,13 @@ import tempfile
 import unittest
 
 import labscript_utils.qtwidgets.file_dialogs as file_dialogs
+from labscript_utils.labconfig import load_appconfig
+from qtutils.qt.QtCore import Qt
 
 # fixtures stubs the splash and does the guarded import of the application,
 # once, for every test module. Importing runviewer.__main__ here instead would
 # show the startup banner.
-from fixtures import RunViewer, main_module
+from fixtures import RunViewer
 
 
 class FakeChannelModel(object):
@@ -50,7 +52,7 @@ class FakeChannelModel(object):
             return self.name
 
         def checkState(self):
-            return main_module.Qt.Checked if self.checked else main_module.Qt.Unchecked
+            return Qt.CheckState.Checked if self.checked else Qt.CheckState.Unchecked
 
     def __init__(self, channels):
         self.items = [self.Item(name, checked) for name, checked in channels]
@@ -182,7 +184,7 @@ class SaveChannelConfigContentTests(unittest.TestCase):
     def test_the_channels_reach_the_file_that_was_written(self):
         self.written('test')
 
-        config = main_module.load_appconfig(os.path.join(self.folder, 'test.toml'))
+        config = load_appconfig(os.path.join(self.folder, 'test.toml'))
 
         self.assertEqual(
             config['runviewer_channels']['channels'],
