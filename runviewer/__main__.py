@@ -1656,11 +1656,15 @@ class TempShot(Shot):
 
 
 class RunviewerServer(ZMQServer):
+    def __init__(self, port, shots_queue, **kwargs):
+        self.shots_queue = shots_queue
+        super().__init__(port, **kwargs)
+
     def handle_add_shot(self, filepath):
         logger.info(f'Received shot file: {filepath}')
         # we add the shot to a queue so that we don't have to wait for the app to come up before
         # responding to runmanager
-        shots_to_process_queue.put(labscript_utils.shared_drive.path_to_local(filepath))
+        self.shots_queue.put(labscript_utils.shared_drive.path_to_local(filepath))
 
 
 if __name__ == "__main__":
@@ -1672,7 +1676,7 @@ if __name__ == "__main__":
 
     port = int(exp_config.get('ports', 'runviewer'))
     # Start experiment server
-    runviewer_server = RunviewerServer(port)
+    runviewer_server = RunviewerServer(port, shots_to_process_queue)
 
     app = RunViewer(exp_config)
     splash.hide()
