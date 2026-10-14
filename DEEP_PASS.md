@@ -137,3 +137,23 @@ Considered and not proposed: `RunviewerClient.add_shot` beside `LyseClient.add_s
 (the ServerInterfaces spec gives each tool its own client); reading
 `time_markers` in runviewer and BLACS's progress bar (one line each, different
 uses).
+
+Done (Ian approved D1, D2 (b), and D3 for step 4): D1 runviewer ebd803e. D2
+labscript-utils 1d25c47 (`qtwidgets.row_order.moved_row_order`, its test, and
+docs "Possible improvements"), runviewer b71a338, lyse aafd7e5. runmanager's
+axis list (`on_axis_*_clicked`) is a third copy, found by the librarian, not yet
+approved.
+
+## Step 2.3: root causes
+
+Each guard the fork added (`git diff master CodeHealth`), traced to its cause.
+
+| # | Guard | Commit | Cause | Proposal |
+| --- | --- | --- | --- | --- |
+| R1 | Load configuration refuses a file holding `channels` | d7b6087 | Channel configurations and the runviewer state file share the `[runviewer_state]` table, the folder and the `*.toml` filter, so either can be loaded as the other. The test that the channel-config panel does not offer `runviewer.toml` guards the same confusion | Save channel configurations under their own table, `[runviewer_channels]`, and read the old table too when loading one. The refusal can then test for that table, or go. About +3 −3 lines |
+| R2 | `tests/fixtures.py` stubs the splash and imports `runviewer.__main__`; `test_client.py` patches the module global `shots_to_process_queue` with `create=True` | 4377c47 and earlier | `RunviewerServer.handle_add_shot` reads `shots_to_process_queue`, a global that exists only under `if __name__ == '__main__'`, so the server cannot be built or tested from anything but the running app (also item 19 of the mapping list) | `RunviewerServer(port, shots_queue)` keeps the queue it is given; `__main__` passes it. `test_client.py` then needs no global, and runmanager's `tests/test_send_to_runviewer.py`, which patches the same global, passes a queue instead. Two repos, about 10 lines |
+
+Not proposed:
+- The `try`/`except` around the start-up load (d7b6087): the file is the user's and can be malformed, and labscript-style rule 5 contains such errors at the boundary with `logger.exception`.
+- `if not selected_files: return` in `on_add_shot` (4db574e): a cancelled dialog returns None by `file_dialogs`' contract.
+- The splash stub itself: every suite app builds its `Splash` at module scope so the splash shows before the slow imports; this is the suite's settled pattern.
