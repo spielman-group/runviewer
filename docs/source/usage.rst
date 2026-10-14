@@ -57,6 +57,8 @@ selected channels, even if they do not exist in the current shot, removing the n
 to constantly re-enable channels when switching between different types of experiments.
 The configuration of enabled channels can also be saved and loaded from the ‘File’ menu,
 which is a useful aid when switching between regularly-used experiments.
+The window's layout is a separate configuration, loaded at start and saved on
+quitting; the ‘File’ menu also loads, reverts and saves it, as in runmanager and lyse.
 
 .. _fig-overview:
 

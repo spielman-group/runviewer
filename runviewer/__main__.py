@@ -144,7 +144,6 @@ class ScaleHandler():
         unscaled_times = sorted(input_times)
         scaled_times = sorted(target_positions)
 
-
         # append values for linear scaling before t=0 and after stop time
         unscaled_times = [min(unscaled_times)-1e-9] + unscaled_times + [max(unscaled_times) + 1e-9]
         scaled_times = [min(scaled_times)-1e-9] + scaled_times + [max(scaled_times) + 1e-9]
@@ -173,7 +172,6 @@ class ColourDelegate(QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        #colours = QColor.colorNames()
         for colour in self._colours:
             pixmap = QPixmap(20, 20)
             pixmap.fill(colour)
@@ -338,7 +336,6 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.disable_selected_shots.clicked.connect(self._disable_selected_shots)
         self.ui.add_shot.clicked.connect(self.on_add_shot)
         self.ui.markers_comboBox.currentIndexChanged.connect(self._update_markers)
-        # self.ui.non_linear_time.toggled.connect(self._toggle_non_linear_time)
         self.ui.linear_time.clicked.connect(self._reset_linear_time)
         self.ui.equal_space_time.clicked.connect(self._space_markers_evenly)
         self.ui.remove_shots.clicked.connect(self.on_remove_shots)
@@ -360,7 +357,6 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.show()
 
         # internal variables
-        #self._channels_list = {}
         self.plot_widgets = {}
         self.plot_items = {}
         self.shutter_lines = {}
@@ -432,12 +428,10 @@ class RunViewer(LabscriptGuiApplication):
 
     def _update_markers(self, index):
         for line, plot in self.all_marker_items.items():
-            # line.blockSignals(True)
             plot.removeItem(line)
         self.all_marker_items = {}
 
         for line, plot in self.movable_marker_items.items():
-            # line.blockSignals(True)
             plot.removeItem(line)
         self.movable_marker_items = {}
         self.marker_times_unscaled = {}
@@ -454,16 +448,12 @@ class RunViewer(LabscriptGuiApplication):
             self.ui.equal_space_time.setEnabled(True)
             self.all_markers = shot.markers
 
-        # self._update_non_linear_time(changed_shot=True)
-
         times = sorted(list(self.all_markers.keys()))
         last_time = 0
         for i, (t, m) in enumerate(sorted(self.all_markers.items())):
             if i < len(times)-1:
                 delta_t = times[i+1] - t
             # Now always have a marker at stop time
-            # else:
-                # delta_t = shot.stop_time - t
 
             unscaled_t = t
             if self.scale_time:
@@ -483,7 +473,6 @@ class RunViewer(LabscriptGuiApplication):
                 line.setBounds([last_time+1e-9 if last_time !=0 else last_time ,None])
                 line.sigPositionChanged.connect(self._marker_moving)
                 line.sigPositionChangeFinished.connect(self._marker_moved)
-            # self.all_marker_items[line] = self._markers_plot[0]
             self.movable_marker_items[line] = self._markers_plot[0]
             self.marker_times_unscaled[line] = unscaled_t
 
@@ -829,17 +818,12 @@ class RunViewer(LabscriptGuiApplication):
                     check_shutter.setEnabled(False)
                     check_shutter.setToolTip("This shot doesn't contain shutter markers")
             else:
-                # colour = None
-                # icon = None
                 shot_combobox_index = self.ui.markers_comboBox.findText(os.path.basename(item.data().path))
                 self.ui.markers_comboBox.model().item(shot_combobox_index).setEnabled(False)
                 if shot_combobox_index == self.ui.markers_comboBox.currentIndex():
                     self.ui.markers_comboBox.setCurrentIndex(0)
                 colour_item.setEditable(False)
                 check_shutter.setEnabled(False)
-
-            # model.setData(index, editor.itemIcon(editor.currentIndex()),
-            # model.setData(index, editor.itemData(editor.currentIndex()), Qt.UserRole)
 
             self.update_channels_treeview()
         elif self.shot_model.indexFromItem(item).column() == SHOT_MODEL__COLOUR_INDEX:
@@ -884,17 +868,10 @@ class RunViewer(LabscriptGuiApplication):
         check_item.setData(shot)
         check_item.setToolTip(filepath)
         items.append(check_item)
-        # script name
-        # path_item = QStandardItem(shot.path)
-        # path_item.setEditable(False)
-        # items.append(path_item)
         self.shot_model.appendRow(items)
         self.ui.markers_comboBox.addItem(os.path.basename(shot.path), shot)
         shot_combobox_index = self.ui.markers_comboBox.findText(os.path.basename(shot.path))
         self.ui.markers_comboBox.model().item(shot_combobox_index).setEnabled(False)
-
-        # only do this if we are checking the shot we are adding
-        # self.update_channels_treeview()
 
     def get_selected_shots_and_colours(self):
         # get the ticked shots
@@ -946,9 +923,6 @@ class RunViewer(LabscriptGuiApplication):
             check_item.setCheckable(True)
             check_item.setCheckState(Qt.Unchecked)
             items.append(check_item)
-            # channel_name_item = QStandardItem(channel)
-            # channel_name_item.setEditable(False)
-            # items.append(channel_name_item)
             self.channel_model.appendRow(items)
 
         channels_to_reactivate = deactivated_treeview_channels.intersection(channels_set)
@@ -974,12 +948,6 @@ class RunViewer(LabscriptGuiApplication):
     def update_plots(self):
         # get list of selected shots
         ticked_shots = self.get_selected_shots_and_colours()
-
-        # SHould we rescale the x-axis?
-        # if self._hidden_plot[0].getViewBox.getState()['autoRange'][0]:
-        #    self._hidden_plot[0].enableAutoRange(axis=pg.ViewBox.XAxis)
-        # else:
-        #    self._hidden_plot[0].enableAutoRange(axis=pg.ViewBox.XAxis, enable=False)
 
         # find stop time of longest ticked shot
 
@@ -1028,7 +996,6 @@ class RunViewer(LabscriptGuiApplication):
                     # do we need to add any plot items for shots that were not previously selected?
                     for shot, (colour, shutters_checked) in ticked_shots.items():
                         if shot not in self.plot_items[channel]:
-                            # plot_item = self.plot_widgets[channel].plot(shot.traces[channel][0], shot.traces[channel][1], pen=pg.mkPen(QColor(colour), width=2))
                             # Add empty plot as it the custom resampling we do will happen quicker if we don't attempt to first plot all of the data
                             plot_item = self.plot_widgets[channel].plot([0, 0], [0], pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
                             self.plot_items[channel][shot] = plot_item
@@ -1073,7 +1040,6 @@ class RunViewer(LabscriptGuiApplication):
         units = ''
         for shot, (colour, shutters_checked) in ticked_shots.items():
             if channel in shot.traces:
-                # plot_item = self.plot_widgets[channel].plot(shot.traces[channel][0], shot.traces[channel][1], pen=pg.mkPen(QColor(colour), width=2))
                 # Add empty plot as it the custom resampling we do will happen quicker if we don't attempt to first plot all of the data
                 plot_item = self.plot_widgets[channel].plot([0, 0], [0], pen=pg.mkPen(QColor(colour), width=2), stepMode='center')
                 self.plot_items[channel][shot] = plot_item
@@ -1111,7 +1077,6 @@ class RunViewer(LabscriptGuiApplication):
                         line.hide()
 
     def on_x_range_changed(self, *args):
-        # print 'x range changed'
         self._resample = True
 
     @inmain_decorator(wait_for_return=True)
@@ -1130,26 +1095,15 @@ class RunViewer(LabscriptGuiApplication):
         from the values it's already chosen. This way, spikes of a short
         duration won't just be skipped over as they would with any sort
         of interpolation."""
-        # TODO: Only finely sample the currently visible region. Coarsely sample the rest
-        # x_out = numpy.float32(numpy.linspace(data_x[0], data_x[-1], 4000*(data_x[-1]-data_x[0])/(xmax-xmin)))
         x_out = numpy.float64(numpy.linspace(xmin, xmax, 3 * 2000 + 2))
         y_out = numpy.empty(len(x_out) - 1, dtype=numpy.float64)
         data_x = numpy.float64(data_x)
         data_y = numpy.float64(data_y)
 
-        # TODO: investigate only resampling when necessary.
-        #       Currently pyqtgraph sometimes has trouble rendering things
-        #       if you don't resample. If a point is far off the graph,
-        #       and this point is the first that should be drawn for stepMode,
-        #       because there is a long gap before the next point (which is
-        #       visible) then there is a problem.
-        #       Also need to explicitly handle cases where none of the data
-        #       is visible (which resampling does by setting NaNs)
         _resample(data_x, data_y, x_out, y_out, numpy.float64(stop_time))
         return x_out, y_out
 
     def _resample_thread(self):
-        # logger = logging.getLogger('runviewer.resample_thread')
         with concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()) as executer:
             while True:
                 if self._resample:
@@ -1196,10 +1150,8 @@ class RunViewer(LabscriptGuiApplication):
 
     @inmain_decorator(wait_for_return=True)
     def channel_checked_and_enabled(self, channel):
-        # logger.info('is channel %s enabled' % channel)
         index = self.channel_model.index(0, CHANNEL_MODEL__CHANNEL_INDEX)
         indexes = self.channel_model.match(index, Qt.DisplayRole, channel, 1, Qt.MatchExactly)
-        # logger.info('number of matches %d' % len(indexes))
         if len(indexes) == 1:
             check_item = self.channel_model.itemFromIndex(indexes[0])
             if check_item.checkState() == Qt.Checked and check_item.isEnabled():
@@ -1315,8 +1267,6 @@ class Shot(object):
 
         self._load_device(master_pseudoclock_device)
 
-        # self._scalehandler = ScaleHandler(self._markers.keys(), self.stop_time)
-
     def _load_markers(self):
         with h5py.File(self.path, 'r') as file:
             if "time_markers" in file:
@@ -1336,7 +1286,6 @@ class Shot(object):
         con = self.connection_table.find_by_name(name)
         if con.device_class == "Shutter" and 'open_state' in con.properties:
             self.add_shutter_times([(name, con.properties['open_state'])])
-
 
     # Temporary solution to physical shutter times
     def add_shutter_times(self, shutters):
@@ -1396,8 +1345,6 @@ class Shot(object):
 
     @property
     def traces(self):
-        # if traces cached:
-        #    return cached traces and waits
         if self._traces is None:
             self._load()
         return self._traces
@@ -1408,11 +1355,6 @@ class Shot(object):
             self._load()
         return self._shutter_times
 
-    # @property
-    # def scalehandler(self):
-        # if self._scalehandler is None:
-            # self._load()
-        # return self._scalehandler
 
 
 class RunviewerServer(ZMQServer):
