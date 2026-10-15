@@ -206,7 +206,7 @@ class RunviewerMainWindow(ThemedWindow, QtWidgets.QMainWindow):
 class RunViewer(LabscriptGuiApplication):
     app_name = 'runviewer'
     default_config_filename = 'runviewer.toml'
-    geometry_keys = ('window_size', 'window_pos', 'splitter', 'splitter_2')
+    splitters = ('splitter', 'splitter_2')
 
     def __init__(self, exp_config):
         splash.update_text('loading graphical interface')
@@ -377,14 +377,7 @@ class RunViewer(LabscriptGuiApplication):
 
     def get_save_data(self):
         """Return the runviewer GUI state stored in TOML app config."""
-        window_size = self.ui.size()
-        window_pos = self.ui.pos()
-        return {
-            'window_size': [window_size.width(), window_size.height()],
-            'window_pos': [window_pos.x(), window_pos.y()],
-            'splitter': self.ui.splitter.sizes(),
-            'splitter_2': self.ui.splitter_2.sizes(),
-        }
+        return self.geometry_save_data()
 
     def load_configuration(self, filename):
         """Load runviewer GUI state from a TOML/legacy INI config file."""
@@ -398,20 +391,8 @@ class RunViewer(LabscriptGuiApplication):
                 f'{filename} is a channel configuration; use Load channel config.'
             )
             return
-        if 'window_size' in save_data:
-            self.ui.resize(*save_data['window_size'])
-        if 'window_pos' in save_data:
-            self.ui.move(*save_data['window_pos'])
-        if 'splitter' in save_data:
-            self.ui.splitter.setSizes(save_data['splitter'])
-        if 'splitter_2' in save_data:
-            self.ui.splitter_2.setSizes(save_data['splitter_2'])
-        self.last_save_config_file = save_target
-        self.last_save_data = self.get_save_data()
-        self.ui.actionSave_configuration.setText(f'Save configuration {save_target}')
-        self.ui.actionSave_configuration_as.setEnabled(True)
-        self.ui.actionRevert_configuration.setEnabled(True)
-        self.set_config_window_title(save_target)
+        self.restore_geometry(save_data)
+        self.configuration_loaded(save_target)
 
     def _update_markers(self, index):
         for line, plot in self.all_marker_items.items():
