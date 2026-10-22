@@ -1247,28 +1247,17 @@ class Shot:
                 change_values.insert(0, (x_values[0], y_values[0])) # insert first value
                 self._shutter_times[name] = {x_value + (self._shutter_calibrations[name][0] if y_value == open_state else self._shutter_calibrations[name][1]): 1 if y_value == open_state else 0 for x_value, y_value in change_values}
 
-    def _load_device(self, device, clock=None):
+    def _load_device(self, device, clock=None, lines=None):
         try:
             logger.info(f'loading {device.name}')
-            module = device.device_class
-            # Load the master pseudoclock class
-            device_class = device_registry.get_runviewer_parser(module, logger=logger)
-            device_instance = device_class(self.path, device)
-            clocklines_and_triggers = device_instance.get_traces(self.add_trace, clock)
-
-            for name, trace in clocklines_and_triggers.items():
-                child_device = self.connection_table.find_by_name(name)
-                for grandchild_device_name, grandchild_device in child_device.child_list.items():
-                    self._load_device(grandchild_device, trace)
-
-            # A line the parser gave no trace for, such as a trigger on a device
-            # with no parser, still has devices below it to draw.
-            for name, child_device in device.child_list.items():
-                if any(line == name or child_device.find_by_name(line) for line in clocklines_and_triggers):
-                    continue
-                for grandchild_device in child_device.child_list.values():
-                    logger.info(f'no trace for {name}, loading {grandchild_device.name} as triggered at 0')
-                    self._load_device(grandchild_device)
+            parser = device_registry.get_runviewer_parser(device.device_class, logger=logger)
+            returned = parser(self.path, device).get_traces(self.add_trace, clock)
+            assert isinstance(returned, dict), f'the parser of {device.name} returned no dict'
+            assert device.name not in returned, f'the parser of {device.name} returned its own name'
+            lines = (lines or {}) | returned
+            # A device is clocked by its parent's trace, if a parser above returned one
+            for child_device in device.child_list.values():
+                self._load_device(child_device, lines.get(device.name), lines)
 
         except Exception as e:
 

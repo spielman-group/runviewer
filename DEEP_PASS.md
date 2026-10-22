@@ -272,3 +272,26 @@ Left as they are:
   them is a large change for little gain.
 - `os.path` in the tests, until those files change for another reason.
 - `import qtutils.icons` registers the icons, so pyflakes' "unused" is expected.
+
+## Row 52: devices below a line with no trace
+
+Ian approved a single walk of the connection table, in place of the two-level
+fallback of `70cc1dd`..`7d21d4f`, whose steps skipped devices in a deep
+parser-less chain (Codex). `_load_device` visits every device once and calls
+its parser once. It carries down the traces the parsers above have returned,
+and gives each device the one returned under its parent's name, or None,
+drawn as if triggered at 0. A parser that raises stops only its own subtree.
+It asserts that a parser returns a dict, and never its own name.
+
+- Needs labscript-utils' default parser, which draws nothing for a clock line,
+  trigger, output or parser-less device. It warns only for a device module
+  with no parser.
+- On labscript-devices' sweep shots, against the code before row 52, 0 traces
+  are removed or changed, and 82 are added: secondaries triggered from a
+  DummyIntermediateDevice. The traces and their listed order are the same as
+  `7d21d4f`'s.
+- An NI_DAQmx card on a line with no trace logs "Failed to load", because
+  its parser needs a clock. `7d21d4f` did the same; before row 52 the card
+  was never reached. Either way it is not drawn.
+- No connection-table walk exists to reuse (librarian), so the recursion stays
+  in runviewer.
