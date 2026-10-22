@@ -1261,6 +1261,20 @@ class Shot:
                 for grandchild_device_name, grandchild_device in child_device.child_list.items():
                     self._load_device(grandchild_device, trace)
 
+            # A line the parser gave no trace for, such as a trigger on a device
+            # with no parser, still has devices below it to draw.
+            for name, child_device in device.child_list.items():
+                if any(line == name or child_device.find_by_name(line) for line in clocklines_and_triggers):
+                    continue
+                for grandchild_device in child_device.child_list.values():
+                    try:
+                        device_registry.get_runviewer_parser(grandchild_device.device_class)
+                    except ImportError:
+                        # A clock line or an output's quantity, not a device
+                        continue
+                    logger.info(f'no trace for {name}, loading {grandchild_device.name} as triggered at 0')
+                    self._load_device(grandchild_device)
+
         except Exception as e:
 
             if hasattr(device, 'name'):
