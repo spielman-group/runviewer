@@ -1252,7 +1252,7 @@ class Shot:
             logger.info(f'loading {device.name}')
             module = device.device_class
             # Load the master pseudoclock class
-            device_class = device_registry.get_runviewer_parser(module)
+            device_class = device_registry.get_runviewer_parser(module, logger=logger)
             device_instance = device_class(self.path, device)
             clocklines_and_triggers = device_instance.get_traces(self.add_trace, clock)
 
