@@ -31,19 +31,29 @@ that a parser returns a dict, and never its own name.
 - No connection-table walk exists elsewhere in the suite to reuse (librarian),
   so the recursion stays in runviewer.
 
+## Upstream
+
+runviewer has upstream's fixes to `master..upstream/master` (`ba91d3e`), ported
+by hand: eec9997, B1, B2, B4, B5, B7-B12, ef5925b, 81bcacf (the parser failure's level), and
+276e0cd with the qtutils 4.4.1 floor. Each commit names its upstream commit.
+
+Waiting for labscript-utils' shared code: the port-in-use exit (039a3ba, with
+zprocess's floor), the exit crash workaround (682a47b) and `setup_application`
+(e8d1817). Not taken: 65ed204 (B3, no change in behaviour), 6491e44 (logging
+style), c25afc2 (the fork's excepthook installs at import).
+
 ## Decisions that hold
 
 - Legacy INI app configs: runviewer keeps its `*.ini` filters and the "LEGACY
   INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED." markers until
   labscript-utils drops INI support suite-wide; the markers are the suite's way
   of finding that code.
-- `import qtutils.icons` registers the icons, so pyflakes' "unused" is expected.
 
 ## Deferred
 
-- The `shots_to_process_queue` and `app` globals, which `RunViewer._process_shots`
-  and `Shot.scaled_times` read, exist only under `if __name__ == '__main__'`.
-  Passing them in, as `RunviewerServer` now takes its queue, is about 10 lines.
+- The `shots_to_process_queue` global, which `RunViewer._process_shots` reads,
+  exists only under `if __name__ == '__main__'`. Passing it in, as
+  `RunviewerServer` takes its queue, is a few lines.
 - Qt enums are qualified but not scoped (`QtCore.Qt.Checked`). Scoping them all
   touches most of `__main__.py`.
 - The tests use `os.path`, until those files change for another reason.
