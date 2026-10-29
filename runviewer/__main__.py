@@ -1363,7 +1363,14 @@ if __name__ == "__main__":
     exp_config = LabConfig(required_params = {"default": ["apparatus_name"], "paths": ["shared_drive", "experiment_shot_storage"]})
 
     # Start experiment server
-    runviewer_server = RunviewerServer(shots_to_process_queue)
+    try:
+        runviewer_server = RunviewerServer(shots_to_process_queue)
+    except OSError as e:
+        # The port is in use, most likely by another runviewer
+        logger.error(str(e))
+        splash.hide()
+        QtWidgets.QMessageBox.critical(None, 'runviewer', str(e))
+        sys.exit(1)
 
     app = RunViewer(exp_config)
     splash.hide()
