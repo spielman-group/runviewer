@@ -12,6 +12,7 @@
 #####################################################################
 import os
 import labscript_utils.excepthook
+labscript_utils.excepthook.install()
 from runviewer import APPLICATION_NAME, runviewer_dir
 from runviewer.client import DEFAULT_PORT
 
