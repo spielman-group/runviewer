@@ -38,12 +38,9 @@ hand in upstream's form, each commit naming its upstream commit.
 The campaign and the upstream stage added no alias, shim, old name or
 deprecation path. Channel configurations are read only from
 `[runviewer_channels]`; the old `[runviewer_state]` table is not (Ian, C-RV2).
-One read keeps a user's saved files working, and is Ian's to decide:
-
-- Legacy INI files: the `*.ini` filter in Load channel config, and the INI
-  conversion in labscript-utils' `load_appconfig`, keep channel configurations
-  and state files saved by upstream runviewer, which writes INI, loading. Kept
-  in step 2.4 (L5), until labscript-utils drops INI suite-wide.
+The `*.ini` filter in Load channel config, with the INI conversion in
+labscript-utils' `load_appconfig`, is kept on Ian's word (C-RV1), so channel
+configurations saved by upstream runviewer, which writes INI, still load.
 
 ## Deferred
 
