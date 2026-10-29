@@ -681,6 +681,7 @@ class RunViewer(LabscriptGuiApplication):
                     check_item.setCheckState(QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked)
                     self.channel_model.takeRow(check_item.row())
                     self.channel_model.insertRow(row, check_item)
+            self.update_plot_positions()
 
     def on_save_channel_config(self):
         # A file name keeps '.toml', where a bare folder lets the macOS panel choose
