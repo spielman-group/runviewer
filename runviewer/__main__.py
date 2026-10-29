@@ -1279,11 +1279,11 @@ class Shot:
         except Exception as e:
 
             if hasattr(device, 'name'):
-                logger.info(f'Failed to load device {device.name:s}, exception was:\n'+
-                            ''.join(traceback.format_exception(type(e), e, e.__traceback__)))
+                logger.error(f'Failed to load device {device.name:s}, exception was:\n'+
+                             ''.join(traceback.format_exception(type(e), e, e.__traceback__)))
             else:
-                logger.info('Failed to load device (unknown name, device object does not have attribute name), exception was:\n'+
-                            ''.join(traceback.format_exception(type(e), e, e.__traceback__)))
+                logger.error('Failed to load device (unknown name, device object does not have attribute name), exception was:\n'+
+                             ''.join(traceback.format_exception(type(e), e, e.__traceback__)))
 
     def scaled_times(self, channel, scalehandler):
         # Called from the resample pool's threads
