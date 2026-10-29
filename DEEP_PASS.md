@@ -33,13 +33,9 @@ that a parser returns a dict, and never its own name.
 
 ## Upstream
 
-`master` is upstream's `ba91d3e`. runviewer has its changes, ported by hand in
-upstream's form, each commit naming its upstream commit: everything but
-c25afc2 and e8d1817.
+`master` is upstream's `ba91d3e`. runviewer has all its changes, ported by
+hand in upstream's form, each commit naming its upstream commit.
 
-- c25afc2 (`labscript_utils.excepthook.install()`): labscript-utils' excepthook
-  installs at import and has no `install()`; it follows labscript-utils.
-- e8d1817 (`setup_application`): waits for labscript-utils.
 - The port-in-use exit (039a3ba) catches the error labscript-utils' `ZMQServer`
   raises, and the exit crash workaround (682a47b) is labscript-utils'
   `exec_qapplication`.
