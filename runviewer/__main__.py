@@ -391,7 +391,7 @@ class RunViewer(LabscriptGuiApplication):
         save_data = appconfig.get('runviewer_state', {})
         # Saving the layout over a channel configuration on quitting would lose its
         # channels:
-        if 'runviewer_channels' in appconfig or 'channels' in save_data:
+        if 'runviewer_channels' in appconfig:
             self.error_dialog(
                 f'{filename} is a channel configuration; use Load channel config.'
             )
@@ -660,10 +660,7 @@ class RunViewer(LabscriptGuiApplication):
         if config_file:
             # LEGACY INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED.
             appconfig = load_appconfig(config_file)
-            # Channel configurations saved before they had their own table:
-            channels = appconfig.get(
-                'runviewer_channels', appconfig.get('runviewer_state', {})
-            ).get('channels', [])
+            channels = appconfig.get('runviewer_channels', {}).get('channels', [])
 
             for row, (channel, checked) in enumerate(channels):
                 check_items = self.channel_model.findItems(channel)
