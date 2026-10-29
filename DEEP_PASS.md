@@ -33,12 +33,19 @@ hand in upstream's form, each commit naming its upstream commit.
   raises, and the exit crash workaround (682a47b) is labscript-utils'
   `exec_qapplication`.
 
-## Decisions that hold
+## Compatibility
 
-- Legacy INI app configs: runviewer keeps its `*.ini` filters and the "LEGACY
-  INI COMPATIBILITY. DEPRECATED CODE, WILL BE REMOVED." markers until
-  labscript-utils drops INI support suite-wide; the markers are the suite's way
-  of finding that code.
+The campaign and the upstream stage added no alias, shim, old name or
+deprecation path. Two reads keep a user's saved files working, and are Ian's to
+decide:
+
+- Legacy INI files: the `*.ini` filter in Load channel config, and the INI
+  conversion in labscript-utils' `load_appconfig`, keep channel configurations
+  and state files saved by upstream runviewer, which writes INI, loading. Kept
+  in step 2.4 (L5), until labscript-utils drops INI suite-wide.
+- The `[runviewer_state]` table in a channel configuration: Load channel config
+  reads channels from it, and Load configuration refuses a file holding them, so
+  channel configurations saved before they had their own table still load.
 
 ## Deferred
 
