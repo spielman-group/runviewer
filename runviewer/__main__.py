@@ -823,7 +823,7 @@ class RunViewer(LabscriptGuiApplication):
             self.on_toggle_shutter(item.checkState() == QtCore.Qt.Checked, current_shot)
 
     def load_shot(self, filepath):
-        logger.info(f'loading run from {filepath:s}')
+        logger.info('loading run from %s', filepath)
         shot = Shot(filepath)
 
         # add shot to shot list
@@ -1123,7 +1123,7 @@ class RunViewer(LabscriptGuiApplication):
                 first_failure = key not in self._resample_failures
                 self._resample_failures.add(key)
             if first_failure:
-                logger.exception(f'Could not resample {channel} of {shot.path}')
+                logger.exception('Could not resample %s of %s', channel, shot.path)
             return None
         with self._resample_failures_lock:
             self._resample_failures.discard(key)
@@ -1282,7 +1282,7 @@ class Shot:
 
     def _load_device(self, device, clock=None, lines=None):
         try:
-            logger.info(f'loading {device.name}')
+            logger.info('loading %s', device.name)
             parser = device_registry.get_runviewer_parser(device.device_class, logger=logger)
             returned = parser(self.path, device).get_traces(self.add_trace, clock)
             assert isinstance(returned, dict), f'the parser of {device.name} returned no dict'
@@ -1295,10 +1295,10 @@ class Shot:
         except Exception as e:
 
             if hasattr(device, 'name'):
-                logger.error(f'Failed to load device {device.name:s}, exception was:\n'+
+                logger.error('Failed to load device %s, exception was:\n%s', device.name,
                              ''.join(traceback.format_exception(type(e), e, e.__traceback__)))
             else:
-                logger.error('Failed to load device (unknown name, device object does not have attribute name), exception was:\n'+
+                logger.error('Failed to load device (unknown name, device object does not have attribute name), exception was:\n%s',
                              ''.join(traceback.format_exception(type(e), e, e.__traceback__)))
 
     def scaled_times(self, channel, scalehandler):
@@ -1347,7 +1347,7 @@ class RunviewerServer(ZMQServer):
         super().__init__(port, **kwargs)
 
     def handle_add_shot(self, filepath):
-        logger.info(f'Received shot file: {filepath}')
+        logger.info('Received shot file: %s', filepath)
         # we add the shot to a queue so that we don't have to wait for the app to come up before
         # responding to runmanager
         self.shots_queue.put(labscript_utils.shared_drive.path_to_local(filepath))
@@ -1365,7 +1365,7 @@ if __name__ == "__main__":
         runviewer_server = RunviewerServer(shots_to_process_queue)
     except OSError as e:
         # The port is in use, most likely by another runviewer
-        logger.error(str(e))
+        logger.error('%s', e)
         splash.hide()
         QtWidgets.QMessageBox.critical(None, 'runviewer', str(e))
         sys.exit(1)
