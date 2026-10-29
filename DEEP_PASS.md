@@ -37,9 +37,10 @@ runviewer has upstream's fixes to `master..upstream/master` (`ba91d3e`), ported
 by hand: eec9997, B1, B2, B4, B5, B7-B12, ef5925b, 81bcacf (the parser failure's level), and
 276e0cd with the qtutils 4.4.1 floor. Each commit names its upstream commit.
 
-Waiting for labscript-utils' shared code: the port-in-use exit (039a3ba, with
-zprocess's floor), the exit crash workaround (682a47b) and `setup_application`
-(e8d1817). Not taken: 65ed204 (B3, no change in behaviour), 6491e44 (logging
+The port-in-use exit (039a3ba) catches the error labscript-utils' `ZMQServer`
+raises, and the exit crash workaround (682a47b) is in labscript-utils'
+`exec_qapplication`. `setup_application` (e8d1817) waits for labscript-utils.
+Not taken: 65ed204 (B3, no change in behaviour), 6491e44 (logging
 style), c25afc2 (the fork's excepthook installs at import).
 
 ## Decisions that hold
