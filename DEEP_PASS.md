@@ -19,17 +19,10 @@ labscript-utils holds.
 
 ## Loading a shot's devices
 
-`Shot._load_device` walks the connection table once and calls each device's
-parser once. It carries down the traces the parsers above have returned, and
-gives each device the one returned under its parent's name, or None, drawn as
-if triggered at 0. A parser that raises stops only its own subtree. It asserts
-that a parser returns a dict, and never its own name.
-
-- It needs labscript-utils' default parser, which draws nothing for a clock
-  line, trigger, output or parser-less device, and warns only for a device
-  module with no parser.
-- No connection-table walk exists elsewhere in the suite to reuse (librarian),
-  so the recursion stays in runviewer.
+`Shot._load_device` has upstream's form: it loads a device's children only
+through the lines its parser returns, each clocked by its line's trace. A
+device with no runviewer parser raises in labscript-utils, and runviewer logs
+"Failed to load device" and loads nothing below it, as upstream does.
 
 ## Upstream
 
