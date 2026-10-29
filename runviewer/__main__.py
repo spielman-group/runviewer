@@ -488,10 +488,13 @@ class RunViewer(LabscriptGuiApplication):
                     unscaled_t = scaled_t
                 if unscaled_t is not None:
                     pos = QtCore.QPoint(glob_pos.x(), glob_pos.y())
-                    plot_data = ui.plotItem.listDataItems()[0].getData()
-                    if plot_data[0] is not None and scaled_t is not None:
-                        nearest_index = numpy.abs(plot_data[0] - scaled_t).argmin() - 1
-                        y_val = f'{plot_data[1][nearest_index]:.2f}'
+                    data_items = ui.plotItem.listDataItems()
+                    plot_data = data_items[0].getData() if data_items else (None, None)
+                    if plot_data[0] is not None and plot_data[1] is not None and len(plot_data[1]) > 0:
+                        # The plots use stepMode='center': y[i] is the value between x[i] and x[i + 1]
+                        index = numpy.searchsorted(plot_data[0], scaled_t, side='right') - 1
+                        index = min(max(index, 0), len(plot_data[1]) - 1)
+                        y_val = f'{plot_data[1][index]:.2f}'
                     else:
                         y_val = '-'
                     text = f'Plot: {name} \nTime: {unscaled_t:.9f}s\nValue: {y_val}'
