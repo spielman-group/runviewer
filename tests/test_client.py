@@ -13,6 +13,7 @@
 #####################################################################
 """RunviewerClient.add_shot queues a shot in a real runviewer server."""
 import os
+import socket
 import unittest
 from queue import Queue
 
@@ -26,7 +27,10 @@ class AddShotTests(unittest.TestCase):
 
     def test_a_shot_reaches_the_queue_as_its_local_path(self):
         queue = Queue()
-        server = RunviewerServer(None, queue, bind_address='tcp://127.0.0.1')
+        with socket.socket() as probe:
+            probe.bind(('127.0.0.1', 0))
+            port = probe.getsockname()[1]
+        server = RunviewerServer(queue, port, bind_address='tcp://127.0.0.1')
         self.addCleanup(server.shutdown)
         path = os.path.join(shared_drive.prefix, 'shot.h5')
         RunviewerClient('127.0.0.1', server.port, 5).add_shot(

@@ -13,6 +13,7 @@
 import os
 import labscript_utils.excepthook
 from runviewer import APPLICATION_NAME, runviewer_dir
+from runviewer.client import DEFAULT_PORT
 
 # Associate app windows with OS menu shortcuts:
 import desktop_app
@@ -1305,7 +1306,10 @@ class Shot:
 
 
 class RunviewerServer(ZMQServer):
-    def __init__(self, port, shots_queue, **kwargs):
+    server = 'runviewer'
+    default_port = DEFAULT_PORT
+
+    def __init__(self, shots_queue, port=None, **kwargs):
         self.shots_queue = shots_queue
         super().__init__(port, **kwargs)
 
@@ -1321,11 +1325,10 @@ if __name__ == "__main__":
 
     shots_to_process_queue = Queue()
 
-    exp_config = LabConfig(required_params = {"default": ["apparatus_name"], "paths": ["shared_drive", "experiment_shot_storage"], 'ports': ['runviewer']})
+    exp_config = LabConfig(required_params = {"default": ["apparatus_name"], "paths": ["shared_drive", "experiment_shot_storage"]})
 
-    port = int(exp_config.get('ports', 'runviewer'))
     # Start experiment server
-    runviewer_server = RunviewerServer(port, shots_to_process_queue)
+    runviewer_server = RunviewerServer(shots_to_process_queue)
 
     app = RunViewer(exp_config)
     splash.hide()

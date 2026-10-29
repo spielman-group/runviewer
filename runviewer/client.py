@@ -14,12 +14,14 @@
 """The client through which other programs reach runviewer's server."""
 from labscript_utils.ls_zprocess import ZMQClient
 
+DEFAULT_PORT = 42521
+
 
 class RunviewerClient(ZMQClient):
     """A ZMQClient for communication with runviewer."""
 
     server = 'runviewer'
-    default_port = 42521
+    default_port = DEFAULT_PORT
 
     def add_shot(self, filepath):
         """Queue a shot file to be opened in runviewer.
