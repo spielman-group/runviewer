@@ -1282,17 +1282,19 @@ class Shot:
                 change_values.insert(0, (x_values[0], y_values[0])) # insert first value
                 self._shutter_times[name] = {x_value + (self._shutter_calibrations[name][0] if y_value == open_state else self._shutter_calibrations[name][1]): 1 if y_value == open_state else 0 for x_value, y_value in change_values}
 
-    def _load_device(self, device, clock=None, lines=None):
+    def _load_device(self, device, clock=None):
         try:
             logger.info('loading %s', device.name)
-            parser = device_registry.get_runviewer_parser(device.device_class, logger=logger)
-            returned = parser(self.path, device).get_traces(self.add_trace, clock)
-            assert isinstance(returned, dict), f'the parser of {device.name} returned no dict'
-            assert device.name not in returned, f'the parser of {device.name} returned its own name'
-            lines = (lines or {}) | returned
-            # A device is clocked by its parent's trace, if a parser above returned one
-            for child_device in device.child_list.values():
-                self._load_device(child_device, lines.get(device.name), lines)
+            module = device.device_class
+            # Load the master pseudoclock class
+            device_class = device_registry.get_runviewer_parser(module)
+            device_instance = device_class(self.path, device)
+            clocklines_and_triggers = device_instance.get_traces(self.add_trace, clock)
+
+            for name, trace in clocklines_and_triggers.items():
+                child_device = self.connection_table.find_by_name(name)
+                for grandchild_device_name, grandchild_device in child_device.child_list.items():
+                    self._load_device(grandchild_device, trace)
 
         except Exception as e:
 
