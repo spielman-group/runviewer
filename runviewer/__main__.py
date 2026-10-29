@@ -59,7 +59,7 @@ pg.setConfigOption('background', 'w')
 pg.setConfigOption('foreground', 'k')
 
 from qtutils import UiLoader, inmain_decorator, inmain_later
-import qtutils.icons
+from qtutils.icons import Icon
 splash.update_text('importing labscript suite modules')
 from labscript_utils.connections import ConnectionTable
 from labscript_utils import device_registry, ensure_str
@@ -283,27 +283,27 @@ class RunViewer(LabscriptGuiApplication):
         self.ui.plot_layout.addWidget(time_axis_plot)
 
         # add some icons
-        self.ui.add_shot.setIcon(QtGui.QIcon(':/qtutils/fugue/plus'))
-        self.ui.remove_shots.setIcon(QtGui.QIcon(':/qtutils/fugue/minus'))
-        self.ui.enable_selected_shots.setIcon(QtGui.QIcon(':/qtutils/fugue/ui-check-box'))
-        self.ui.disable_selected_shots.setIcon(QtGui.QIcon(':/qtutils/fugue/ui-check-box-uncheck'))
-        self.ui.channel_move_to_top.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-stop-090'))
-        self.ui.channel_move_up.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-090'))
-        self.ui.channel_move_down.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-270'))
-        self.ui.channel_move_to_bottom.setIcon(QtGui.QIcon(':/qtutils/fugue/arrow-stop-270'))
-        self.ui.reset_x_axis.setIcon(QtGui.QIcon(':/qtutils/fugue/layer-resize-replicate'))
-        self.ui.reset_y_axis.setIcon(QtGui.QIcon(':/qtutils/fugue/layer-resize-replicate-vertical'))
-        self.ui.toggle_tooltip.setIcon(QtGui.QIcon(':/qtutils/fugue/ui-tooltip-balloon'))
-        self.ui.linear_time.setIcon(QtGui.QIcon(':/qtutils/fugue/clock-history'))
-        self.ui.equal_space_time.setIcon(QtGui.QIcon(':/qtutils/fugue/border-vertical-all'))
+        self.ui.add_shot.setIcon(Icon(':/qtutils/fugue/plus'))
+        self.ui.remove_shots.setIcon(Icon(':/qtutils/fugue/minus'))
+        self.ui.enable_selected_shots.setIcon(Icon(':/qtutils/fugue/ui-check-box'))
+        self.ui.disable_selected_shots.setIcon(Icon(':/qtutils/fugue/ui-check-box-uncheck'))
+        self.ui.channel_move_to_top.setIcon(Icon(':/qtutils/fugue/arrow-stop-090'))
+        self.ui.channel_move_up.setIcon(Icon(':/qtutils/fugue/arrow-090'))
+        self.ui.channel_move_down.setIcon(Icon(':/qtutils/fugue/arrow-270'))
+        self.ui.channel_move_to_bottom.setIcon(Icon(':/qtutils/fugue/arrow-stop-270'))
+        self.ui.reset_x_axis.setIcon(Icon(':/qtutils/fugue/layer-resize-replicate'))
+        self.ui.reset_y_axis.setIcon(Icon(':/qtutils/fugue/layer-resize-replicate-vertical'))
+        self.ui.toggle_tooltip.setIcon(Icon(':/qtutils/fugue/ui-tooltip-balloon'))
+        self.ui.linear_time.setIcon(Icon(':/qtutils/fugue/clock-history'))
+        self.ui.equal_space_time.setIcon(Icon(':/qtutils/fugue/border-vertical-all'))
 
         self.ui.linear_time.setEnabled(False)
         self.ui.equal_space_time.setEnabled(False)
 
-        self.ui.actionOpen_Shot.setIcon(QtGui.QIcon(':/qtutils/fugue/plus'))
-        self.ui.actionQuit.setIcon(QtGui.QIcon(':/qtutils/fugue/cross-button'))
-        self.ui.actionLoad_channel_config.setIcon(QtGui.QIcon(':/qtutils/fugue/folder-open'))
-        self.ui.actionSave_channel_config.setIcon(QtGui.QIcon(':/qtutils/fugue/disk'))
+        self.ui.actionOpen_Shot.setIcon(Icon(':/qtutils/fugue/plus'))
+        self.ui.actionQuit.setIcon(Icon(':/qtutils/fugue/cross-button'))
+        self.ui.actionLoad_channel_config.setIcon(Icon(':/qtutils/fugue/folder-open'))
+        self.ui.actionSave_channel_config.setIcon(Icon(':/qtutils/fugue/disk'))
 
         # connect signals
         self.ui.reset_x_axis.clicked.connect(self.on_x_axis_reset)
