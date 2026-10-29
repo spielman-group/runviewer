@@ -1092,7 +1092,8 @@ class RunViewer(LabscriptGuiApplication):
         try:
             scalehandler = self.scalehandler
             if self.scale_time and scalehandler is not None:
-                xnew, ynew = self.resample(shot.scaled_times(channel, scalehandler), shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
+                stop_time = scalehandler.get_scaled_time(shot.stop_time)
+                xnew, ynew = self.resample(shot.scaled_times(channel, scalehandler), shot.traces[channel][1], xmin, xmax, stop_time, dx)
             else:
                 xnew, ynew = self.resample(shot.traces[channel][0], shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
             return inmain_later(plot_item.setData, xnew, ynew, pen=pg.mkPen(QtGui.QColor(colour), width=2), stepMode='center')
