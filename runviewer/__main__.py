@@ -364,6 +364,8 @@ class RunViewer(LabscriptGuiApplication):
 
         # start resample thread
         self._resample = False
+        self._resample_failures = set()
+        self._resample_failures_lock = threading.Lock()
         self._thread = threading.Thread(target=self._resample_thread)
         self._thread.daemon = True
         self._thread.start()
@@ -1089,6 +1091,7 @@ class RunViewer(LabscriptGuiApplication):
         ]
 
     def __pool_resample(self, channel, shot, colour, plot_item, xmin, xmax, dx):
+        key = (shot.path, channel)
         try:
             scalehandler = self.scalehandler
             if self.scale_time and scalehandler is not None:
@@ -1096,9 +1099,19 @@ class RunViewer(LabscriptGuiApplication):
                 xnew, ynew = self.resample(shot.scaled_times(channel, scalehandler), shot.traces[channel][1], xmin, xmax, stop_time, dx)
             else:
                 xnew, ynew = self.resample(shot.traces[channel][0], shot.traces[channel][1], xmin, xmax, shot.stop_time, dx)
-            return inmain_later(plot_item.setData, xnew, ynew, pen=pg.mkPen(QtGui.QColor(colour), width=2), stepMode='center')
+            result = inmain_later(plot_item.setData, xnew, ynew, pen=pg.mkPen(QtGui.QColor(colour), width=2), stepMode='center')
         except Exception:
-            logger.exception(f'Could not resample {channel}')
+            # Resampling runs every 0.1 s, so a run of failures of one channel of a
+            # shot logs one traceback
+            with self._resample_failures_lock:
+                first_failure = key not in self._resample_failures
+                self._resample_failures.add(key)
+            if first_failure:
+                logger.exception(f'Could not resample {channel} of {shot.path}')
+            return None
+        with self._resample_failures_lock:
+            self._resample_failures.discard(key)
+        return result
 
     @inmain_decorator(wait_for_return=True)
     def channel_checked_and_enabled(self, channel):
