@@ -64,7 +64,9 @@ in which the plots appear. The list displays the union of all channels of the sh
 are enabled or have been enabled. A channel that is not in any enabled shot stays in the
 list, disabled, with its check box unchanged, and is plotted again when a shot that has the
 channel is enabled. The order of the channels and their check boxes can also be saved to a
-file and loaded from it with the ‘File’ menu.
+file and loaded from it with the ‘File’ menu. The window's layout is a separate
+configuration, loaded at start and saved on quitting; the ‘File’ menu also loads, reverts
+and saves it, as in runmanager and lyse.
 
 .. _fig-overview:
 

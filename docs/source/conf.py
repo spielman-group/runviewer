@@ -100,12 +100,12 @@ intersphinx_mapping = {
     'pyqtgraph': ('https://pyqtgraph.readthedocs.io/en/latest/', None),
     'matplotlib': ('https://matplotlib.org/stable/', None),
     'h5py': ('https://docs.h5py.org/en/stable/', None),
-    # An inventory of the PyQt5 docs, made with
+    # An inventory of the PyQt6 docs, made with
     # https://github.com/MSLNZ/msl-qt/blob/master/docs/create_pyqt_objects.py (MIT
-    # License). The names of Qt classes and methods are the same in PySide6 and PyQt6.
+    # License). The names of Qt classes and methods are the same in PySide6.
     'qt': (
-        'https://riverbankcomputing.com/static/Docs/PyQt5/',
-        'pyqt5-modified-objects.inv',
+        'https://www.riverbankcomputing.com/static/Docs/PyQt6/',
+        'pyqt6-modified-objects.inv',
     ),
 }
 
