@@ -26,12 +26,21 @@ device with no runviewer parser raises in labscript-utils, and runviewer logs
 
 ## Upstream
 
-`master` is upstream's `ba91d3e`. runviewer has all its changes, ported by
-hand in upstream's form, each commit naming its upstream commit.
+`master` is upstream's `f53e28a`. runviewer has all its changes in upstream's
+form, each commit naming its upstream commit; those after `ba91d3e` are
+cherry-picked as `08c1c64..2fe554d`.
 
 - The port-in-use exit (039a3ba) catches the error labscript-utils' `ZMQServer`
   raises, and the exit crash workaround (682a47b) is labscript-utils'
   `exec_qapplication`.
+- The Ctrl-C timer that f248246 removes was already labscript-utils'
+  `exec_qapplication`'s, so f248246 is not picked.
+- The flat buttons (86c66d1) cover the fork's buttons; the group buttons it also
+  changes are gone from the fork.
+- `2058547` links the docs' Qt references to the fork's PyQt6 inventory, and
+  describes the window layout configuration, which upstream lacks.
+- `zprocess` keeps no version floor: runviewer reaches it only through
+  labscript-utils' `ls_zprocess`.
 
 ## Compatibility
 
